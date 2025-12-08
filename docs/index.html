@@ -304,7 +304,23 @@
                 ⚡ 零依赖与轻量
               </h3>
               <p class="text-gray-600" data-i18n="features.zerodep.desc">
-                纯 JavaScript 实现，gzip 后仅约 10KB，不引入任何框架负担。
+                纯 JavaScript 实现，gzip 后仅约 12KB，不引入任何框架负担。
+              </p>
+            </div>
+            <!-- 特性卡片 7: 热区功能 -->
+            <div
+              class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
+            >
+              <div
+                class="flex items-center justify-center h-12 w-12 rounded-full bg-orange-100 text-orange-500 mb-4"
+              >
+                <i class="fas fa-fire text-xl"> </i>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.hotzone.title">
+                🔥 热区功能
+              </h3>
+              <p class="text-gray-600" data-i18n="features.hotzone.desc">
+                给文本绑定动态变量，实现模板化设计，动态替换文本内容。
               </p>
             </div>
           </div>
@@ -587,6 +603,8 @@ export class AppModule { }
                   <tr><td class="px-4 py-3 border-b font-mono text-indigo-600">lang</td><td class="px-4 py-3 border-b">string</td><td class="px-4 py-3 border-b">"zh"</td><td class="px-4 py-3 border-b" data-i18n="config.attr.lang">界面语言（"zh" 中文，"en" 英文）</td></tr>
                   <tr class="bg-gray-50"><td class="px-4 py-3 border-b font-mono text-indigo-600">theme-color</td><td class="px-4 py-3 border-b">string</td><td class="px-4 py-3 border-b">"#5450dc"</td><td class="px-4 py-3 border-b" data-i18n="config.attr.theme">主题色（影响按钮、悬停状态等）</td></tr>
                   <tr><td class="px-4 py-3 border-b font-mono text-indigo-600">initial-data</td><td class="px-4 py-3 border-b">string</td><td class="px-4 py-3 border-b">-</td><td class="px-4 py-3 border-b" data-i18n="config.attr.initial">初始化 JSON 数据</td></tr>
+                  <tr class="bg-gray-50"><td class="px-4 py-3 border-b font-mono text-orange-600">enable-hotzone</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">false</td><td class="px-4 py-3 border-b" data-i18n="config.attr.hotzone">启用热区功能（管理员模式）</td></tr>
+                  <tr><td class="px-4 py-3 border-b font-mono text-orange-600">hotzone-data</td><td class="px-4 py-3 border-b">string</td><td class="px-4 py-3 border-b">-</td><td class="px-4 py-3 border-b" data-i18n="config.attr.hotzoneData">热区变量数据（JSON 格式）</td></tr>
                 </tbody>
               </table>
             </div>
@@ -656,11 +674,59 @@ export class AppModule { }
               </div>
               <div class="bg-gray-50 p-4 rounded-lg">
                 <h5 class="font-bold text-gray-700 mb-2" data-i18n="docs.objects.text">📝 文本 (TEXT)</h5>
-                <p class="text-sm text-gray-600"><code>text</code>, <code>fontSize</code></p>
+                <p class="text-sm text-gray-600"><code>text</code>, <code>fontSize</code>, <code class="text-orange-600">hotzone</code></p>
               </div>
               <div class="bg-gray-50 p-4 rounded-lg">
                 <h5 class="font-bold text-gray-700 mb-2" data-i18n="docs.objects.image">🖼️ 图片 (IMAGE)</h5>
                 <p class="text-sm text-gray-600"><code>width</code>, <code>height</code>, <code>dataUrl</code></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 热区功能说明 -->
+          <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-100 mt-12">
+            <h3 class="text-2xl font-bold mb-6 flex items-center text-gray-800">
+              <i class="fas fa-fire mr-3 text-orange-500"></i>
+              <span data-i18n="docs.hotzone.title">热区功能</span>
+            </h3>
+            <p class="text-gray-600 mb-6" data-i18n="docs.hotzone.intro">热区功能允许给文本对象绑定动态变量，实现模板化的动态文本替换。</p>
+
+            <!-- 管理员模式 -->
+            <div class="mb-8">
+              <h4 class="font-bold text-lg text-gray-800 mb-3" data-i18n="docs.hotzone.admin">管理员模式（设计模板）</h4>
+              <div class="bg-gray-800 p-4 rounded-lg overflow-x-auto mb-3">
+                <pre class="m-0"><code class="text-sm text-green-400">&lt;canvas-drawing-editor
+  title="模板设计器"
+  enable-hotzone="true"
+&gt;&lt;/canvas-drawing-editor&gt;</code></pre>
+              </div>
+              <p class="text-gray-600 text-sm" data-i18n="docs.hotzone.admin.desc">右键点击文本 → 新建热区 → 输入变量名 → 保存</p>
+            </div>
+
+            <!-- 用户模式 -->
+            <div class="mb-8">
+              <h4 class="font-bold text-lg text-gray-800 mb-3" data-i18n="docs.hotzone.user">用户模式（展示动态数据）</h4>
+              <div class="bg-gray-800 p-4 rounded-lg overflow-x-auto mb-3">
+                <pre class="m-0"><code class="text-sm text-green-400">&lt;canvas-drawing-editor
+  initial-data='{"objects":[...]}'
+  hotzone-data='{"name": "张三", "company": "XX公司"}'
+&gt;&lt;/canvas-drawing-editor&gt;</code></pre>
+              </div>
+            </div>
+
+            <!-- 数据结构 -->
+            <div>
+              <h4 class="font-bold text-lg text-gray-800 mb-3" data-i18n="docs.hotzone.structure">热区数据结构</h4>
+              <div class="bg-gray-800 p-4 rounded-lg overflow-x-auto">
+                <pre class="m-0"><code class="text-sm text-green-400">{
+  "type": "TEXT",
+  "text": "姓名",
+  "hotzone": {
+    "variableName": "name",      // 变量名（必填）
+    "defaultValue": "默认值",     // 默认值（可选）
+    "description": "用户姓名"     // 描述（可选）
+  }
+}</code></pre>
               </div>
             </div>
           </div>
@@ -731,7 +797,9 @@ export class AppModule { }
           'features.export.title': '💾 灵活的导入导出',
           'features.export.desc': '支持 JSON 格式保存/加载项目，PNG 格式导出图像，以及一键清空画布。',
           'features.zerodep.title': '⚡ 零依赖与轻量',
-          'features.zerodep.desc': '纯 JavaScript 实现，gzip 后仅约 10KB，不引入任何框架负担。',
+          'features.zerodep.desc': '纯 JavaScript 实现，gzip 后仅约 12KB，不引入任何框架负担。',
+          'features.hotzone.title': '🔥 热区功能',
+          'features.hotzone.desc': '给文本绑定动态变量，实现模板化设计，动态替换文本内容。',
           'install.subtitle': '快速上手',
           'install.title': '📦 安装与集成',
           'install.npm': '<i class="fab fa-npm mr-3 text-red-500"></i> NPM 安装',
@@ -805,6 +873,14 @@ export class AppModule { }
           'config.attr.lang': '界面语言（"zh" 中文，"en" 英文）',
           'config.attr.theme': '主题色（影响按钮、悬停状态等）',
           'config.attr.initial': '初始化 JSON 数据',
+          'config.attr.hotzone': '启用热区功能（管理员模式）',
+          'config.attr.hotzoneData': '热区变量数据（JSON 格式）',
+          'docs.hotzone.title': '热区功能',
+          'docs.hotzone.intro': '热区功能允许给文本对象绑定动态变量，实现模板化的动态文本替换。',
+          'docs.hotzone.admin': '管理员模式（设计模板）',
+          'docs.hotzone.admin.desc': '右键点击文本 → 新建热区 → 输入变量名 → 保存',
+          'docs.hotzone.user': '用户模式（展示动态数据）',
+          'docs.hotzone.structure': '热区数据结构',
         },
         en: {
           'nav.features': 'Features',
@@ -826,7 +902,9 @@ export class AppModule { }
           'features.export.title': '💾 Flexible Import/Export',
           'features.export.desc': 'Save/load JSON projects, export PNG images, clear canvas with one click.',
           'features.zerodep.title': '⚡ Zero Dependencies & Lightweight',
-          'features.zerodep.desc': 'Pure JavaScript, only ~10KB gzipped, no framework overhead.',
+          'features.zerodep.desc': 'Pure JavaScript, only ~12KB gzipped, no framework overhead.',
+          'features.hotzone.title': '🔥 Hotzone Feature',
+          'features.hotzone.desc': 'Bind dynamic variables to text for template-based dynamic content replacement.',
           'install.subtitle': 'Quick Start',
           'install.title': '📦 Installation & Integration',
           'install.npm': '<i class="fab fa-npm mr-3 text-red-500"></i> NPM Install',
@@ -900,6 +978,14 @@ export class AppModule { }
           'config.attr.lang': 'UI language ("zh" Chinese, "en" English)',
           'config.attr.theme': 'Theme color (affects buttons, hover states, etc.)',
           'config.attr.initial': 'Initial JSON data',
+          'config.attr.hotzone': 'Enable hotzone feature (admin mode)',
+          'config.attr.hotzoneData': 'Hotzone variable data (JSON format)',
+          'docs.hotzone.title': 'Hotzone Feature',
+          'docs.hotzone.intro': 'The hotzone feature allows binding dynamic variables to text objects for template-based dynamic text replacement.',
+          'docs.hotzone.admin': 'Admin Mode (Design Templates)',
+          'docs.hotzone.admin.desc': 'Right-click text → Create Hotzone → Enter variable name → Save',
+          'docs.hotzone.user': 'User Mode (Display Dynamic Data)',
+          'docs.hotzone.structure': 'Hotzone Data Structure',
         }
       };
 

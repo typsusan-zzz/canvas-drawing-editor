@@ -36,10 +36,18 @@ export interface PathObject extends BaseObject {
   points: Point[];
 }
 
+// 热区配置接口
+export interface HotzoneConfig {
+  variableName: string;   // 变量名（唯一标识）
+  defaultValue?: string;  // 默认值（可选）
+  description?: string;   // 描述说明（可选）
+}
+
 export interface TextObject extends BaseObject {
   type: 'TEXT';
   text: string;
   fontSize: number;
+  hotzone?: HotzoneConfig; // 热区配置（可选）
 }
 
 export interface ImageObject extends BaseObject {
@@ -69,6 +77,7 @@ export interface EditorConfig {
   showClear?: boolean;
   lang?: LangType;
   themeColor?: string;
+  enableHotzone?: boolean; // 是否启用热区功能，默认false（管理员开启，用户端关闭）
 }
 
 // 国际化文本
@@ -96,6 +105,20 @@ const i18n: Record<LangType, Record<string, string>> = {
     textPlaceholder: '输入文本...',
     startCreating: '开始创作',
     selectToolHint: '选择左侧的工具开始绘制',
+    // 热区相关
+    hotzoneCreate: '新建热区',
+    hotzoneEdit: '编辑热区',
+    hotzoneRemove: '取消热区',
+    hotzoneTitle: '热区配置',
+    hotzoneVariableName: '变量名',
+    hotzoneVariableNamePlaceholder: '请输入变量名（如：name）',
+    hotzoneDefaultValue: '默认值',
+    hotzoneDefaultValuePlaceholder: '请输入默认值（可选）',
+    hotzoneDescription: '描述',
+    hotzoneDescriptionPlaceholder: '请输入描述说明（可选）',
+    hotzoneSave: '保存',
+    hotzoneCancel: '取消',
+    hotzoneVariableNameRequired: '变量名不能为空',
   },
   en: {
     select: 'Select (V)',
@@ -120,6 +143,20 @@ const i18n: Record<LangType, Record<string, string>> = {
     textPlaceholder: 'Enter text...',
     startCreating: 'Start Creating',
     selectToolHint: 'Select a tool on the left to start drawing',
+    // Hotzone related
+    hotzoneCreate: 'Create Hotzone',
+    hotzoneEdit: 'Edit Hotzone',
+    hotzoneRemove: 'Remove Hotzone',
+    hotzoneTitle: 'Hotzone Configuration',
+    hotzoneVariableName: 'Variable Name',
+    hotzoneVariableNamePlaceholder: 'Enter variable name (e.g., name)',
+    hotzoneDefaultValue: 'Default Value',
+    hotzoneDefaultValuePlaceholder: 'Enter default value (optional)',
+    hotzoneDescription: 'Description',
+    hotzoneDescriptionPlaceholder: 'Enter description (optional)',
+    hotzoneSave: 'Save',
+    hotzoneCancel: 'Cancel',
+    hotzoneVariableNameRequired: 'Variable name is required',
   },
 };
 
@@ -142,6 +179,7 @@ const defaultConfig: EditorConfig = {
   showClear: true,
   lang: 'zh',
   themeColor: DEFAULT_THEME_COLOR,
+  enableHotzone: false, // 默认关闭热区功能
 };
 
 /**
@@ -206,6 +244,12 @@ export class CanvasDrawingEditor extends HTMLElement {
   private boundHandleKeyDown: (e: KeyboardEvent) => void;
   private boundHandleWheel: (e: WheelEvent) => void;
 
+  // 热区相关状态
+  private contextMenu!: HTMLDivElement;
+  private hotzoneDrawer!: HTMLDivElement;
+  private hotzoneEditingTextId: string | null = null;
+  private hotzoneData: Record<string, string> = {};
+
   constructor() {
     super();
     this.shadow = this.attachShadow({ mode: 'open' });
@@ -221,7 +265,8 @@ export class CanvasDrawingEditor extends HTMLElement {
     return [
       'title', 'show-pencil', 'show-rectangle', 'show-circle', 'show-text',
       'show-image', 'show-zoom', 'show-download', 'show-export', 'show-import',
-      'show-color', 'show-clear', 'initial-data', 'lang', 'theme-color'
+      'show-color', 'show-clear', 'initial-data', 'lang', 'theme-color',
+      'enable-hotzone', 'hotzone-data'
     ];
   }
 
@@ -276,7 +321,24 @@ export class CanvasDrawingEditor extends HTMLElement {
       showClear: this.getAttribute('show-clear') !== 'false',
       lang: lang,
       themeColor: this.getAttribute('theme-color') || defaultConfig.themeColor,
+      enableHotzone: this.getAttribute('enable-hotzone') === 'true',
     };
+
+    // 解析热区数据
+    this.parseHotzoneData();
+  }
+
+  // 解析热区数据属性
+  private parseHotzoneData(): void {
+    const hotzoneDataAttr = this.getAttribute('hotzone-data');
+    if (hotzoneDataAttr) {
+      try {
+        this.hotzoneData = JSON.parse(hotzoneDataAttr);
+      } catch (err) {
+        console.error('Failed to parse hotzone-data:', err);
+        this.hotzoneData = {};
+      }
+    }
   }
 
   // 获取国际化文本
@@ -288,6 +350,23 @@ export class CanvasDrawingEditor extends HTMLElement {
   // 生成唯一 ID
   private generateId(): string {
     return Math.random().toString(36).substr(2, 9);
+  }
+
+  // 精确测量文本宽度
+  private measureTextWidth(text: string, fontSize: number): number {
+    if (!this.ctx) {
+      // 回退方案：粗略估算（中文字符1倍，英文0.6倍）
+      let width = 0;
+      for (const char of text) {
+        width += char.charCodeAt(0) > 127 ? fontSize : fontSize * 0.6;
+      }
+      return width;
+    }
+    this.ctx.save();
+    this.ctx.font = `${fontSize}px sans-serif`;
+    const metrics = this.ctx.measureText(text);
+    this.ctx.restore();
+    return metrics.width;
   }
 
   // 加载初始数据
@@ -306,6 +385,9 @@ export class CanvasDrawingEditor extends HTMLElement {
         this.scale = 1;
         this.panOffset = { x: 0, y: 0 };
         this.updateZoomDisplay();
+
+        // 应用热区数据（替换文本内容）
+        this.applyHotzoneData();
 
         // 重新加载图片（异步加载完成后需要重新渲染）
         this.objects.forEach(obj => {
@@ -417,8 +499,8 @@ export class CanvasDrawingEditor extends HTMLElement {
       }
       case 'TEXT': {
         const t = obj as TextObject;
-        const width = t.text.length * t.fontSize * 0.6;
-        return { x: t.x, y: t.y - t.fontSize, width, height: t.fontSize };
+        const width = this.measureTextWidth(t.text, t.fontSize);
+        return { x: t.x, y: t.y - t.fontSize, width, height: t.fontSize * 1.2 };
       }
       case 'PATH': {
         const p = obj as PathObject;
@@ -471,7 +553,8 @@ export class CanvasDrawingEditor extends HTMLElement {
       }
       case 'TEXT': {
         const t = obj as TextObject;
-        return x >= t.x && x <= t.x + (t.text.length * t.fontSize * 0.6) && y >= t.y - t.fontSize && y <= t.y;
+        const width = this.measureTextWidth(t.text, t.fontSize);
+        return x >= t.x && x <= t.x + width && y >= t.y - t.fontSize && y <= t.y + t.fontSize * 0.2;
       }
       case 'PATH': {
         const p = obj as PathObject;
@@ -562,6 +645,12 @@ export class CanvasDrawingEditor extends HTMLElement {
   // 键盘事件处理
   private handleKeyDown(e: KeyboardEvent): void {
     if (this.isTextInputVisible) return;
+
+    // 如果焦点在输入框或文本域中，不处理快捷键
+    const activeElement = this.shadow.activeElement || document.activeElement;
+    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+      return;
+    }
 
     // Ctrl+Z: 撤销
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
@@ -1060,6 +1149,27 @@ export class CanvasDrawingEditor extends HTMLElement {
         const t = obj as TextObject;
         ctx.font = `${t.fontSize}px sans-serif`;
         ctx.fillText(t.text, t.x, t.y);
+
+        // 如果启用热区功能且文本有热区配置，绘制热区标识
+        if (this.config.enableHotzone && t.hotzone) {
+          const textWidth = this.measureTextWidth(t.text, t.fontSize);
+          const themeColor = this.config.themeColor || DEFAULT_THEME_COLOR;
+
+          // 绘制虚线边框
+          ctx.save();
+          ctx.strokeStyle = themeColor;
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4, 2]);
+          ctx.strokeRect(t.x - 2, t.y - t.fontSize - 2, textWidth + 4, t.fontSize * 1.2 + 4);
+          ctx.setLineDash([]);
+
+          // 绘制热区图标（小圆点）
+          ctx.fillStyle = themeColor;
+          ctx.beginPath();
+          ctx.arc(t.x + textWidth + 8, t.y - t.fontSize / 2, 4, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.restore();
+        }
         break;
       }
       case 'IMAGE': {
@@ -1309,6 +1419,182 @@ export class CanvasDrawingEditor extends HTMLElement {
     }
   }
 
+  // ========== 热区功能相关方法 ==========
+
+  // 绑定热区相关事件
+  private bindHotzoneEvents(): void {
+    // 右键菜单项点击
+    this.contextMenu.querySelectorAll('.context-menu-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        const action = (e.target as HTMLElement).getAttribute('data-action');
+        this.handleHotzoneAction(action);
+        this.hideContextMenu();
+      });
+    });
+
+    // 点击其他地方隐藏右键菜单
+    this.shadow.addEventListener('mousedown', (e) => {
+      if (!this.contextMenu.contains(e.target as Node)) {
+        this.hideContextMenu();
+      }
+    });
+
+    // 抽屉关闭按钮
+    const closeBtn = this.hotzoneDrawer.querySelector('.hotzone-drawer-close');
+    closeBtn?.addEventListener('click', () => this.hideHotzoneDrawer());
+
+    // 抽屉取消按钮
+    const cancelBtn = this.hotzoneDrawer.querySelector('.hotzone-btn-cancel');
+    cancelBtn?.addEventListener('click', () => this.hideHotzoneDrawer());
+
+    // 抽屉保存按钮
+    const saveBtn = this.hotzoneDrawer.querySelector('.hotzone-btn-save');
+    saveBtn?.addEventListener('click', () => this.saveHotzone());
+  }
+
+  // 处理右键菜单
+  private handleContextMenu(e: MouseEvent): void {
+    e.preventDefault();
+
+    const { x, y } = this.getMousePos(e);
+    const clickedObject = [...this.objects].reverse().find(obj => this.isHit(obj, x, y));
+
+    // 只对文本对象显示右键菜单
+    if (clickedObject && clickedObject.type === 'TEXT') {
+      const textObj = clickedObject as TextObject;
+      this.hotzoneEditingTextId = textObj.id;
+
+      // 根据是否有热区显示不同菜单项
+      const hasHotzone = !!textObj.hotzone;
+      const createItem = this.contextMenu.querySelector('[data-action="hotzone-create"]') as HTMLElement;
+      const editItem = this.contextMenu.querySelector('[data-action="hotzone-edit"]') as HTMLElement;
+      const removeItem = this.contextMenu.querySelector('[data-action="hotzone-remove"]') as HTMLElement;
+
+      if (hasHotzone) {
+        createItem.style.display = 'none';
+        editItem.style.display = 'block';
+        removeItem.style.display = 'block';
+      } else {
+        createItem.style.display = 'block';
+        editItem.style.display = 'none';
+        removeItem.style.display = 'none';
+      }
+
+      // 显示右键菜单
+      this.contextMenu.style.display = 'block';
+      this.contextMenu.style.left = `${e.offsetX}px`;
+      this.contextMenu.style.top = `${e.offsetY}px`;
+    } else {
+      this.hideContextMenu();
+    }
+  }
+
+  // 隐藏右键菜单
+  private hideContextMenu(): void {
+    this.contextMenu.style.display = 'none';
+  }
+
+  // 处理热区操作
+  private handleHotzoneAction(action: string | null): void {
+    if (!action || !this.hotzoneEditingTextId) return;
+
+    const textObj = this.objects.find(o => o.id === this.hotzoneEditingTextId) as TextObject | undefined;
+    if (!textObj) return;
+
+    switch (action) {
+      case 'hotzone-create':
+      case 'hotzone-edit':
+        this.showHotzoneDrawer(textObj);
+        break;
+      case 'hotzone-remove':
+        this.removeHotzone(textObj);
+        break;
+    }
+  }
+
+  // 显示热区配置抽屉
+  private showHotzoneDrawer(textObj: TextObject): void {
+    // 填充表单
+    const variableNameInput = this.hotzoneDrawer.querySelector('input[name="variableName"]') as HTMLInputElement;
+    const defaultValueInput = this.hotzoneDrawer.querySelector('input[name="defaultValue"]') as HTMLInputElement;
+    const descriptionInput = this.hotzoneDrawer.querySelector('textarea[name="description"]') as HTMLTextAreaElement;
+
+    if (textObj.hotzone) {
+      variableNameInput.value = textObj.hotzone.variableName || '';
+      defaultValueInput.value = textObj.hotzone.defaultValue || '';
+      descriptionInput.value = textObj.hotzone.description || '';
+    } else {
+      variableNameInput.value = '';
+      defaultValueInput.value = '';
+      descriptionInput.value = '';
+    }
+
+    this.hotzoneDrawer.style.display = 'flex';
+  }
+
+  // 隐藏热区配置抽屉
+  private hideHotzoneDrawer(): void {
+    this.hotzoneDrawer.style.display = 'none';
+    this.hotzoneEditingTextId = null;
+  }
+
+  // 保存热区配置
+  private saveHotzone(): void {
+    if (!this.hotzoneEditingTextId) return;
+
+    const textObj = this.objects.find(o => o.id === this.hotzoneEditingTextId) as TextObject | undefined;
+    if (!textObj) return;
+
+    const variableNameInput = this.hotzoneDrawer.querySelector('input[name="variableName"]') as HTMLInputElement;
+    const defaultValueInput = this.hotzoneDrawer.querySelector('input[name="defaultValue"]') as HTMLInputElement;
+    const descriptionInput = this.hotzoneDrawer.querySelector('textarea[name="description"]') as HTMLTextAreaElement;
+
+    const variableName = variableNameInput.value.trim();
+    if (!variableName) {
+      variableNameInput.focus();
+      return;
+    }
+
+    this.saveHistory();
+
+    textObj.hotzone = {
+      variableName,
+      defaultValue: defaultValueInput.value.trim() || undefined,
+      description: descriptionInput.value.trim() || undefined,
+    };
+
+    this.hideHotzoneDrawer();
+    this.renderCanvas();
+    this.dispatchChangeEvent();
+  }
+
+  // 移除热区
+  private removeHotzone(textObj: TextObject): void {
+    this.saveHistory();
+    delete textObj.hotzone;
+    this.renderCanvas();
+    this.dispatchChangeEvent();
+  }
+
+  // 应用热区数据（替换文本内容）
+  private applyHotzoneData(): void {
+    if (Object.keys(this.hotzoneData).length === 0) return;
+
+    this.objects.forEach(obj => {
+      if (obj.type === 'TEXT') {
+        const textObj = obj as TextObject;
+        if (textObj.hotzone && textObj.hotzone.variableName) {
+          const value = this.hotzoneData[textObj.hotzone.variableName];
+          if (value !== undefined) {
+            textObj.text = value;
+          } else if (textObj.hotzone.defaultValue) {
+            textObj.text = textObj.hotzone.defaultValue;
+          }
+        }
+      }
+    });
+  }
+
   // 渲染 DOM 结构
   private render(): void {
     const themeColor = this.config.themeColor || DEFAULT_THEME_COLOR;
@@ -1433,6 +1719,39 @@ export class CanvasDrawingEditor extends HTMLElement {
               <h3>${this.t('startCreating')}</h3>
               <p>${this.t('selectToolHint')}</p>
             </div>
+
+            <!-- 右键菜单 -->
+            <div class="context-menu" style="display: none;">
+              <div class="context-menu-item" data-action="hotzone-create">${this.t('hotzoneCreate')}</div>
+              <div class="context-menu-item" data-action="hotzone-edit" style="display: none;">${this.t('hotzoneEdit')}</div>
+              <div class="context-menu-item context-menu-item-danger" data-action="hotzone-remove" style="display: none;">${this.t('hotzoneRemove')}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 热区配置抽屉 -->
+        <div class="hotzone-drawer" style="display: none;">
+          <div class="hotzone-drawer-header">
+            <h3>${this.t('hotzoneTitle')}</h3>
+            <button class="hotzone-drawer-close">&times;</button>
+          </div>
+          <div class="hotzone-drawer-body">
+            <div class="hotzone-form-group">
+              <label>${this.t('hotzoneVariableName')} <span class="required">*</span></label>
+              <input type="text" class="hotzone-input" name="variableName" placeholder="${this.t('hotzoneVariableNamePlaceholder')}" />
+            </div>
+            <div class="hotzone-form-group">
+              <label>${this.t('hotzoneDefaultValue')}</label>
+              <input type="text" class="hotzone-input" name="defaultValue" placeholder="${this.t('hotzoneDefaultValuePlaceholder')}" />
+            </div>
+            <div class="hotzone-form-group">
+              <label>${this.t('hotzoneDescription')}</label>
+              <textarea class="hotzone-textarea" name="description" placeholder="${this.t('hotzoneDescriptionPlaceholder')}"></textarea>
+            </div>
+          </div>
+          <div class="hotzone-drawer-footer">
+            <button class="hotzone-btn hotzone-btn-cancel">${this.t('hotzoneCancel')}</button>
+            <button class="hotzone-btn hotzone-btn-save">${this.t('hotzoneSave')}</button>
           </div>
         </div>
       </div>
@@ -1448,6 +1767,10 @@ export class CanvasDrawingEditor extends HTMLElement {
 
     this.textInputContainer = this.shadow.querySelector('.text-input-container')!;
     this.textInput = this.shadow.querySelector('.text-input')!;
+
+    // 热区相关 DOM 引用
+    this.contextMenu = this.shadow.querySelector('.context-menu')!;
+    this.hotzoneDrawer = this.shadow.querySelector('.hotzone-drawer')!;
 
     // 绑定事件
     this.bindEvents();
@@ -1465,6 +1788,12 @@ export class CanvasDrawingEditor extends HTMLElement {
     this.canvas.addEventListener('touchmove', (e) => this.handleCanvasPointerMove(e));
     this.canvas.addEventListener('touchend', () => this.handleCanvasPointerUp());
     this.canvas.addEventListener('wheel', this.boundHandleWheel, { passive: false });
+
+    // 右键菜单事件（仅在启用热区时）
+    if (this.config.enableHotzone) {
+      this.canvas.addEventListener('contextmenu', (e) => this.handleContextMenu(e));
+      this.bindHotzoneEvents();
+    }
 
     // 工具按钮
     this.shadow.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
@@ -1948,6 +2277,168 @@ export class CanvasDrawingEditor extends HTMLElement {
 
       .empty-hint p {
         color: #94a3b8;
+      }
+
+      /* 右键菜单 */
+      .context-menu {
+        position: absolute;
+        z-index: 100;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        min-width: 140px;
+        padding: 4px 0;
+      }
+
+      .context-menu-item {
+        padding: 8px 16px;
+        font-size: 14px;
+        color: #334155;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      .context-menu-item:hover {
+        background: #f1f5f9;
+      }
+
+      .context-menu-item-danger {
+        color: #ef4444;
+      }
+
+      .context-menu-item-danger:hover {
+        background: #fef2f2;
+      }
+
+      /* 热区配置抽屉 */
+      .hotzone-drawer {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 320px;
+        background: #ffffff;
+        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        z-index: 200;
+      }
+
+      .hotzone-drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .hotzone-drawer-header h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+      }
+
+      .hotzone-drawer-close {
+        width: 28px;
+        height: 28px;
+        border: none;
+        background: transparent;
+        font-size: 20px;
+        color: #64748b;
+        cursor: pointer;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .hotzone-drawer-close:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+      }
+
+      .hotzone-drawer-body {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+      }
+
+      .hotzone-form-group {
+        margin-bottom: 16px;
+      }
+
+      .hotzone-form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: #334155;
+        margin-bottom: 6px;
+      }
+
+      .hotzone-form-group .required {
+        color: #ef4444;
+      }
+
+      .hotzone-input,
+      .hotzone-textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #1e293b;
+        box-sizing: border-box;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+
+      .hotzone-input:focus,
+      .hotzone-textarea:focus {
+        outline: none;
+        border-color: ${this.config.themeColor || DEFAULT_THEME_COLOR};
+        box-shadow: 0 0 0 3px ${this.config.themeColor || DEFAULT_THEME_COLOR}22;
+      }
+
+      .hotzone-textarea {
+        min-height: 80px;
+        resize: vertical;
+      }
+
+      .hotzone-drawer-footer {
+        display: flex;
+        gap: 12px;
+        padding: 16px 20px;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .hotzone-btn {
+        flex: 1;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .hotzone-btn-cancel {
+        background: #f1f5f9;
+        color: #475569;
+      }
+
+      .hotzone-btn-cancel:hover {
+        background: #e2e8f0;
+      }
+
+      .hotzone-btn-save {
+        background: ${this.config.themeColor || DEFAULT_THEME_COLOR};
+        color: #ffffff;
+      }
+
+      .hotzone-btn-save:hover {
+        filter: brightness(0.9);
       }
     `;
   }

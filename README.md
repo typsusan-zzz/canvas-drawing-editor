@@ -23,11 +23,11 @@
 - 🎨 **绑图工具** - 画笔、矩形、圆形、文本
 - 🖼️ **图片支持** - 导入和编辑图片
 - 🔍 **缩放平移** - 鼠标滚轮以光标为中心缩放，拖拽平移画布
-
+- 🔥 **热区功能** - 给文本绑定动态变量，实现模板化动态替换
 - 💾 **导入导出** - JSON 格式保存/加载项目，PNG 格式导出
 - ⚡ **零依赖** - 纯 JavaScript 实现，无需 React/Vue
 - 🎛️ **可配置** - 通过配置显示/隐藏任意工具
-- 📦 **轻量级** - gzip 后约 10KB
+- 📦 **轻量级** - gzip 后约 12KB
 
 ### 📦 安装
 
@@ -158,6 +158,8 @@ export class AppModule { }
 | `lang` | string | "zh" | 界面语言（"zh" 中文，"en" 英文） |
 | `theme-color` | string | "#5450dc" | 主题色（影响按钮、悬停状态等） |
 | `initial-data` | string | - | 初始化 JSON 数据（格式见下方） |
+| `enable-hotzone` | boolean | false | 是否启用热区功能（管理员模式） |
+| `hotzone-data` | string | - | 热区变量数据（JSON 格式，用于动态替换文本） |
 
 ### 📊 初始化数据
 
@@ -217,6 +219,7 @@ document.addEventListener('editor-change', (e) => {
 |------|------|------|
 | `text` | string | 文本内容 |
 | `fontSize` | number | 字体大小（像素） |
+| `hotzone` | object | 热区配置（可选，详见下方热区功能） |
 
 **图片** (`type: "IMAGE"`)：
 | 属性 | 类型 | 说明 |
@@ -249,6 +252,57 @@ document.addEventListener('editor-close', () => {
 });
 ```
 
+### 🔥 热区功能
+
+热区功能允许你给文本对象绑定动态变量，实现模板化的动态文本替换。
+
+#### 使用场景
+
+1. 设计模板（如证书、名片、海报）
+2. 给文本添加热区，绑定变量名
+3. 使用时传入变量值，动态替换文本内容
+
+#### 管理员端（设计模板）
+
+```html
+<!-- 启用热区编辑功能 -->
+<canvas-drawing-editor
+  title="模板设计器"
+  enable-hotzone="true"
+></canvas-drawing-editor>
+```
+
+操作步骤：
+1. 创建文本（如："姓名"）
+2. 右键点击文本 → 选择「新建热区」
+3. 输入变量名（如：`name`）→ 保存
+4. 导出 JSON 保存模板
+
+#### 用户端（展示动态数据）
+
+```html
+<!-- 传入模板数据和变量值 -->
+<canvas-drawing-editor
+  initial-data='{"objects":[...]}'
+  hotzone-data='{"name": "张三", "company": "XX公司"}'
+></canvas-drawing-editor>
+```
+
+#### 热区数据结构
+
+```javascript
+// 文本对象的热区配置
+{
+  "type": "TEXT",
+  "text": "姓名",
+  "hotzone": {
+    "variableName": "name",      // 变量名（必填）
+    "defaultValue": "默认值",     // 默认值（可选）
+    "description": "用户姓名"     // 描述（可选）
+  }
+}
+```
+
 ### 🛠️ 开发
 
 ```bash
@@ -274,11 +328,11 @@ A powerful canvas-based drawing editor Web Component with **zero dependencies**.
 - 🎨 **Drawing Tools** - Pencil, Rectangle, Circle, Text
 - 🖼️ **Image Support** - Import and manipulate images
 - 🔍 **Zoom & Pan** - Mouse wheel zoom centered on cursor, drag to pan
-
+- 🔥 **Hotzone** - Bind dynamic variables to text for template-based replacement
 - 💾 **Import/Export** - Save and load projects as JSON, export as PNG
 - ⚡ **Zero Dependencies** - Pure JavaScript, no React/Vue required
 - 🎛️ **Configurable** - Show/hide any tool via configuration
-- 📦 **Lightweight** - ~10KB gzipped
+- 📦 **Lightweight** - ~12KB gzipped
 
 ### 📦 Installation
 
@@ -409,6 +463,8 @@ export class AppModule { }
 | `lang` | string | "zh" | UI language ("zh" for Chinese, "en" for English) |
 | `theme-color` | string | "#5450dc" | Theme color (affects buttons, hover states, etc.) |
 | `initial-data` | string | - | Initial JSON data to render (see format below) |
+| `enable-hotzone` | boolean | false | Enable hotzone feature (admin mode) |
+| `hotzone-data` | string | - | Hotzone variable data (JSON format for dynamic text replacement) |
 
 ### 📊 Initial Data
 
@@ -468,6 +524,7 @@ Each object in `e.detail.objects` has the following base properties:
 |----------|------|-------------|
 | `text` | string | Text content |
 | `fontSize` | number | Font size in pixels |
+| `hotzone` | object | Hotzone config (optional, see Hotzone section) |
 
 **Image** (`type: "IMAGE"`):
 | Property | Type | Description |
@@ -498,6 +555,57 @@ if (savedData) {
 document.addEventListener('editor-close', () => {
   console.log('Editor closed');
 });
+```
+
+### 🔥 Hotzone Feature
+
+The hotzone feature allows you to bind dynamic variables to text objects for template-based dynamic text replacement.
+
+#### Use Cases
+
+1. Design templates (certificates, business cards, posters)
+2. Add hotzones to text, bind variable names
+3. Pass variable values at runtime to dynamically replace text
+
+#### Admin Mode (Design Templates)
+
+```html
+<!-- Enable hotzone editing -->
+<canvas-drawing-editor
+  title="Template Designer"
+  enable-hotzone="true"
+></canvas-drawing-editor>
+```
+
+Steps:
+1. Create text (e.g., "Name")
+2. Right-click on text → Select "Create Hotzone"
+3. Enter variable name (e.g., `name`) → Save
+4. Export JSON to save template
+
+#### User Mode (Display Dynamic Data)
+
+```html
+<!-- Pass template data and variable values -->
+<canvas-drawing-editor
+  initial-data='{"objects":[...]}'
+  hotzone-data='{"name": "John Doe", "company": "Acme Inc"}'
+></canvas-drawing-editor>
+```
+
+#### Hotzone Data Structure
+
+```javascript
+// Text object with hotzone config
+{
+  "type": "TEXT",
+  "text": "Name",
+  "hotzone": {
+    "variableName": "name",       // Variable name (required)
+    "defaultValue": "Default",    // Default value (optional)
+    "description": "User name"    // Description (optional)
+  }
+}
 ```
 
 ### 🛠️ Development

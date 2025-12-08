@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canvas Drawing Editor - 原生 HTML 示例 (热区功能)</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    canvas-drawing-editor {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <!-- 使用 Web Component - 启用热区功能 热区功能一般管理那边开启-->
+  <canvas-drawing-editor
+    title="热区功能测试"
+    show-minimap="true"
+    hotzone-data='{"number1": "123", "number2": "1233"}'
+    initial-data='{"objects":[{"id":"2pz67mowz","type":"RECTANGLE","x":319,"y":187,"width":0,"height":0,"color":"#000000","lineWidth":3},{"id":"g428n92rq","type":"RECTANGLE","x":316,"y":201,"width":167,"height":113,"color":"#000000","lineWidth":3},{"id":"9h8ltqdjz","type":"TEXT","x":363,"y":261,"text":"数值1","fontSize":24,"color":"#000000","lineWidth":3,"hotzone":{"variableName":"number1"}},{"id":"7ozoowfnb","type":"RECTANGLE","x":593,"y":208,"width":0,"height":0,"color":"#000000","lineWidth":3},{"id":"x90s8o1gd","type":"RECTANGLE","x":533,"y":204,"width":183,"height":111,"color":"#000000","lineWidth":3},{"id":"7vqliy269","type":"RECTANGLE","x":619,"y":205,"width":0,"height":-1,"color":"#000000","lineWidth":3},{"id":"eey3hzhtb","type":"RECTANGLE","x":631,"y":203,"width":0,"height":0,"color":"#000000","lineWidth":3},{"id":"ffqzlfc2j","type":"RECTANGLE","x":601,"y":240,"width":0,"height":0,"color":"#000000","lineWidth":3},{"id":"mcgu12zyk","type":"TEXT","x":589,"y":258,"text":"数值2","fontSize":24,"color":"#000000","lineWidth":3,"hotzone":{"variableName":"number2","defaultValue":"默认值222"}}]}'
+  ></canvas-drawing-editor>
+
+  <!-- 引入 Web Component (无需 React) -->
+  <script src="../../dist/canvas-drawing-editor.umd.js"></script>
+
+  <script>
+    // 监听编辑器事件
+    document.addEventListener('editor-change', (e) => {
+      console.log('画布内容变化:', e.detail.objects);
+    });
+  </script>
+</body>
+</html>
