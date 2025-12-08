@@ -1,6 +1,15 @@
 # Canvas Drawing Editor
 
+[![npm version](https://img.shields.io/npm/v/canvas-drawing-editor.svg)](https://www.npmjs.com/package/canvas-drawing-editor)
+[![GitHub](https://img.shields.io/github/license/typsusan-zzz/canvas-drawing-editor)](https://github.com/typsusan-zzz/canvas-drawing-editor)
+
 [中文](#中文) | [English](#english)
+
+**GitHub**: https://github.com/typsusan-zzz/canvas-drawing-editor
+
+**NPM**: https://www.npmjs.com/package/canvas-drawing-editor
+
+**在线文档 / Documentation**: https://typsusan-zzz.github.io/canvas-drawing-editor/
 
 ---
 
