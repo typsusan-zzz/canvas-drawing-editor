@@ -1,0 +1,1103 @@
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Canvas Drawing Editor - 官网首页</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://res.gemcoder.com/js/reload.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              'primary': '#4f46e5',
+              'secondary': '#10b981',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background-color: #f8fafc;
+        transition: background-color 0.3s, color 0.3s;
+      }
+      .dark body {
+        background-color: #1a202c;
+      }
+      pre {
+        margin: 0;
+        background: transparent;
+      }
+      pre code {
+        display: block;
+        padding: 0;
+        background: transparent;
+      }
+      /* 暗黑模式样式 */
+      .dark header {
+        background-color: #2d3748;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+      }
+      .dark .bg-white {
+        background-color: #2d3748 !important;
+      }
+      .dark .bg-gray-50 {
+        background-color: #374151 !important;
+      }
+      .dark .bg-gray-100 {
+        background-color: #1f2937 !important;
+      }
+      .dark .text-gray-800, .dark .text-gray-900 {
+        color: #f7fafc !important;
+      }
+      .dark .text-gray-600, .dark .text-gray-700 {
+        color: #cbd5e0 !important;
+      }
+      .dark .text-gray-500 {
+        color: #a0aec0 !important;
+      }
+      .dark .text-gray-400 {
+        color: #718096 !important;
+      }
+      .dark .border-gray-100, .dark .border-gray-200, .dark .border-gray-300 {
+        border-color: #4a5568 !important;
+      }
+      .dark footer {
+        background-color: #1a202c !important;
+      }
+      .dark .shadow-lg, .dark .shadow-xl, .dark .shadow-2xl {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
+      }
+    </style>
+  </head>
+  <body class="text-gray-800 antialiased">
+    <!-- 导航栏 -->
+    <!-- [MODULE] nav_主导航栏 -->
+    <header class="sticky top-0 z-50 bg-white shadow-md">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <!-- Logo/品牌名 -->
+          <div class="flex-shrink-0">
+            <a
+              href="javascript:void(0);"
+              class="text-2xl font-bold text-primary flex items-center"
+            >
+              <i class="fas fa-palette mr-2 text-secondary"> </i>
+              Canvas Drawing Editor
+            </a>
+          </div>
+          <!-- 导航链接 (简化，官网首页通常不需要复杂的导航) -->
+          <nav class="hidden md:flex space-x-8">
+            <a
+              href="#features"
+              class="text-gray-600 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition duration-150"
+              data-i18n="nav.features"
+            >
+              特性
+            </a>
+            <a
+              href="#installation"
+              class="text-gray-600 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition duration-150"
+              data-i18n="nav.installation"
+            >
+              安装
+            </a>
+            <a
+              href="#usage"
+              class="text-gray-600 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition duration-150"
+              data-i18n="nav.usage"
+            >
+              使用
+            </a>
+            <a
+              href="#documentation"
+              class="text-gray-600 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition duration-150"
+              data-i18n="nav.documentation"
+            >
+              文档
+            </a>
+          </nav>
+          <!-- CTA 按钮 -->
+          <div class="flex items-center space-x-4">
+            <!-- 语言切换 -->
+            <button
+              id="langToggle"
+              class="text-gray-600 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition duration-150 flex items-center"
+              title="切换语言"
+            >
+              <i class="fas fa-globe mr-1"></i>
+              <span id="langText">EN</span>
+            </button>
+            <!-- 主题切换 -->
+            <button
+              id="themeToggle"
+              class="text-gray-600 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition duration-150"
+              title="切换主题"
+            >
+              <i class="fas fa-moon" id="themeIcon"></i>
+            </button>
+            <a
+              href="javascript:void(0);"
+              class="bg-primary hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 text-sm flex items-center"
+            >
+              <i class="fab fa-github mr-2"></i>
+              GitHub
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+    <!-- [/MODULE] nav_主导航栏 -- 包含品牌Logo、导航链接和GitHub CTA按钮 -->
+    <main>
+      <!-- [MODULE] hero_主宣传区域 -->
+      <section class="pt-16 pb-24 bg-white border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <!-- 标题 -->
+          <h1
+            class="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-tight"
+            data-i18n="hero.title"
+          >
+            强大的 <span class="text-primary">Canvas</span> 画布编辑器
+          </h1>
+          <!-- 副标题/描述 -->
+          <p class="mt-4 text-xl text-gray-500 max-w-3xl mx-auto mb-10" data-i18n="hero.subtitle">
+            此组件为 Web Component，需要配合框架或原生 HTML 使用。<strong>零依赖</strong>，支持 Vue 2/3、React、Angular 和原生 HTML。
+          </p>
+          <!-- 核心操作按钮 -->
+          <div class="flex justify-center space-x-4">
+            <a
+              href="#installation"
+              class="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-xl shadow-lg text-white bg-secondary hover:bg-emerald-600 transition duration-300 transform hover:-translate-y-0.5"
+              data-i18n="hero.start"
+            >
+              <i class="fas fa-download mr-2"> </i>
+              立即开始
+            </a>
+            <a
+              href="javascript:void(0);"
+              class="inline-flex items-center px-8 py-3 border border-gray-300 text-base font-medium rounded-xl shadow-md text-gray-700 bg-white hover:bg-gray-50 transition duration-300"
+              data-i18n="hero.demo"
+            >
+              <i class="fas fa-play-circle mr-2 text-primary"> </i>
+              查看演示
+            </a>
+          </div>
+          <!-- 占位图/示意图 -->
+          <div class="mt-16">
+            <div
+              class="bg-gray-100 p-4 rounded-xl shadow-2xl border border-gray-200"
+            >
+              <!-- 使用图片占位符，模拟编辑器界面 -->
+              <img
+                src="home.png"
+                alt="Canvas Editor Interface Preview"
+                class="w-full h-auto rounded-lg shadow-inner border border-gray-300"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- [/MODULE] hero_主宣传区域 -- 包含标题、描述、CTA按钮和编辑器预览图 -->
+      <!-- [MODULE] features_功能特性区域 -->
+      <section id="features" class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center mb-16">
+            <h2
+              class="text-base text-secondary font-semibold tracking-wide uppercase"
+              data-i18n="features.subtitle"
+            >
+              核心能力
+            </h2>
+            <p
+              class="mt-2 text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900"
+              data-i18n="features.title"
+            >
+              ✨ 功能特性一览
+            </p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+            <!-- 特性卡片 1: 绘图工具 -->
+            <div
+              class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
+            >
+              <div
+                class="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-primary mb-4"
+              >
+                <i class="fas fa-pencil-ruler text-xl"> </i>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.drawing.title">
+                🎨 绘图工具集
+              </h3>
+              <p class="text-gray-600" data-i18n="features.drawing.desc">
+                支持画笔、矩形、圆形、文本等基础图形绘制，满足多样化创作需求。
+              </p>
+            </div>
+            <!-- 特性卡片 2: 图片支持 -->
+            <div
+              class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
+            >
+              <div
+                class="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-primary mb-4"
+              >
+                <i class="fas fa-image text-xl"> </i>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.image.title">
+                🖼️ 图片导入与编辑
+              </h3>
+              <p class="text-gray-600" data-i18n="features.image.desc">
+                轻松导入图片到画布，并进行后续的编辑和操作。
+              </p>
+            </div>
+            <!-- 特性卡片 3: 缩放平移 -->
+            <div
+              class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
+            >
+              <div
+                class="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-primary mb-4"
+              >
+                <i class="fas fa-search-plus text-xl"> </i>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.zoom.title">
+                🔍 缩放与平移
+              </h3>
+              <p class="text-gray-600" data-i18n="features.zoom.desc">
+                使用鼠标滚轮以光标为中心缩放，支持流畅的拖拽平移画布。
+              </p>
+            </div>
+
+            <!-- 特性卡片 5: 导入导出 -->
+            <div
+              class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
+            >
+              <div
+                class="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-primary mb-4"
+              >
+                <i class="fas fa-file-import text-xl"> </i>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.export.title">
+                💾 灵活的导入导出
+              </h3>
+              <p class="text-gray-600" data-i18n="features.export.desc">
+                支持 JSON 格式保存/加载项目，PNG 格式导出图像，以及一键清空画布。
+              </p>
+            </div>
+            <!-- 特性卡片 6: 零依赖与轻量 -->
+            <div
+              class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
+            >
+              <div
+                class="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-primary mb-4"
+              >
+                <i class="fas fa-bolt text-xl"> </i>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.zerodep.title">
+                ⚡ 零依赖与轻量
+              </h3>
+              <p class="text-gray-600" data-i18n="features.zerodep.desc">
+                纯 JavaScript 实现，gzip 后仅约 10KB，不引入任何框架负担。
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- [/MODULE] features_功能特性区域 -- 展示核心功能列表 -->
+      <!-- [MODULE] installation_安装指南区域 -->
+      <section id="installation" class="py-24 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center mb-16">
+            <h2
+              class="text-base text-primary font-semibold tracking-wide uppercase"
+              data-i18n="install.subtitle"
+            >
+              快速上手
+            </h2>
+            <p
+              class="mt-2 text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900"
+              data-i18n="install.title"
+            >
+              📦 安装与集成
+            </p>
+          </div>
+          <div class="lg:grid lg:grid-cols-12 lg:gap-12">
+            <!-- 左侧：NPM 安装 -->
+            <div
+              class="lg:col-span-5 mb-10 lg:mb-0 p-6 bg-gray-50 rounded-xl shadow-inner border border-gray-200"
+            >
+              <h3
+                class="text-2xl font-bold mb-4 flex items-center text-gray-800"
+                data-i18n="install.npm"
+              >
+                <i class="fab fa-npm mr-3 text-red-500"> </i>
+                NPM 安装
+              </h3>
+              <p class="text-gray-600 mb-4" data-i18n="install.npm.desc">
+                通过 npm 或 yarn 安装到您的项目中：
+              </p>
+              <!-- 代码块 -->
+              <div class="bg-gray-800 p-4 rounded-lg overflow-x-auto shadow-lg">
+                <pre class="m-0"><code class="text-sm text-green-400">$ npm install canvas-drawing-editor</code></pre>
+              </div>
+              <p class="text-sm text-gray-500 mt-3" data-i18n="install.html.note">
+                （注意：此组件为 Web Component，需要配合框架或原生 HTML 使用）
+              </p>
+            </div>
+            <!-- 右侧：原生 HTML 使用示例 -->
+            <div class="lg:col-span-7">
+              <h3
+                class="text-2xl font-bold mb-4 flex items-center text-gray-800"
+                data-i18n="install.html.title"
+              >
+                <i class="fas fa-code mr-3 text-yellow-600"> </i>
+                原生 HTML 使用
+              </h3>
+              <p class="text-gray-600 mb-4" data-i18n="install.html.desc">
+                直接引入 UMD 包，并在 DOM 中使用自定义标签：
+              </p>
+              <!-- 代码块：原生 HTML 示例 -->
+              <div class="bg-gray-800 p-4 rounded-lg shadow-lg relative overflow-x-auto">
+                <button
+                  id="copyNativeBtn"
+                  class="absolute top-2 right-2 text-xs text-gray-400 hover:text-white p-1 rounded transition"
+                  data-i18n="copy"
+                >
+                  <i class="fas fa-copy"></i> 复制
+                </button>
+                <pre class="m-0"><code id="nativeCodeBlock" class="text-sm text-green-400">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;style&gt;
+    canvas-drawing-editor {
+      width: 100%;
+      height: 600px;
+      display: block;
+    }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;canvas-drawing-editor title="我的画板"&gt;&lt;/canvas-drawing-editor&gt;
+
+  &lt;script src="https://unpkg.com/canvas-drawing-editor/dist/canvas-drawing-editor.umd.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- [/MODULE] installation_安装指南区域 -- 包含NPM安装和原生HTML使用示例 -->
+      <!-- [MODULE] usage_框架集成区域 -->
+      <section id="usage" class="py-20 bg-gray-50 border-t border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center mb-16">
+            <h2
+              class="text-base text-secondary font-semibold tracking-wide uppercase"
+              data-i18n="usage.subtitle"
+            >
+              开始使用
+            </h2>
+            <p
+              class="mt-2 text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900"
+              data-i18n="usage.title"
+            >
+              🚀 如何使用
+            </p>
+          </div>
+          <div class="space-y-12">
+            <!-- Vue 3 示例 -->
+            <div
+              class="bg-white p-8 rounded-xl shadow-lg border border-gray-100"
+            >
+              <h3
+                class="text-2xl font-bold mb-4 flex items-center text-green-600"
+              >
+                <i class="fab fa-vuejs mr-3"> </i>
+                Vue 3
+              </h3>
+              <p class="text-gray-600 mb-4" data-i18n="usage.vue.desc">
+                在 Vue 3 组件中使用 Web Component：
+              </p>
+              <!-- 代码块：Vue 3 示例 -->
+              <div class="bg-gray-800 p-4 rounded-lg shadow-lg relative overflow-x-auto">
+                <button
+                  id="copyVueBtn"
+                  class="absolute top-2 right-2 text-xs text-gray-400 hover:text-white p-1 rounded transition"
+                  data-i18n="copy"
+                >
+                  <i class="fas fa-copy"></i> 复制
+                </button>
+                <pre class="m-0"><code id="vueCodeBlock" class="text-sm text-green-400" data-code="vue"></code></pre>
+              </div>
+            </div>
+
+            <!-- React 示例 -->
+            <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+              <h3 class="text-2xl font-bold mb-4 flex items-center text-blue-500">
+                <i class="fab fa-react mr-3"></i>
+                React
+              </h3>
+              <p class="text-gray-600 mb-4" data-i18n="usage.react.desc">
+                React 中使用 Web Component 的方式与原生类似，但需注意属性传递：
+              </p>
+              <!-- 代码块：React 示例 -->
+              <div class="bg-gray-800 p-4 rounded-lg shadow-lg relative overflow-x-auto">
+                <button
+                  id="copyReactBtn"
+                  class="absolute top-2 right-2 text-xs text-gray-400 hover:text-white p-1 rounded transition"
+                  data-i18n="copy"
+                >
+                  <i class="fas fa-copy"></i> 复制
+                </button>
+                <pre class="m-0"><code id="reactCodeBlock" class="text-sm text-green-400" data-code="react"></code></pre>
+              </div>
+            </div>
+
+            <!-- Angular 示例 -->
+            <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+              <h3 class="text-2xl font-bold mb-4 flex items-center text-red-500">
+                <i class="fab fa-angular mr-3"></i>
+                Angular
+              </h3>
+              <p class="text-gray-600 mb-4" data-i18n="usage.angular.desc">
+                Angular 中使用 Web Component 需要在模块中添加 CUSTOM_ELEMENTS_SCHEMA：
+              </p>
+              <!-- 代码块：Angular 示例 -->
+              <div class="bg-gray-800 p-4 rounded-lg shadow-lg relative overflow-x-auto">
+                <button
+                  id="copyAngularBtn"
+                  class="absolute top-2 right-2 text-xs text-gray-400 hover:text-white p-1 rounded transition"
+                  data-i18n="copy"
+                >
+                  <i class="fas fa-copy"></i> 复制
+                </button>
+                <pre class="m-0"><code id="angularCodeBlock" class="text-sm text-green-400">// app.module.ts
+import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import 'canvas-drawing-editor';
+
+@NgModule({
+  // ...
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
+})
+export class AppModule { }
+
+// app.component.html
+&lt;canvas-drawing-editor
+  title="Angular 画板"
+  style="width: 100%; height: 600px;"
+&gt;&lt;/canvas-drawing-editor&gt;</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- [/MODULE] usage_框架集成区域 -- 包含Vue、React和Angular集成示例 -->
+
+      <!-- [MODULE] config_可配置性区域 -->
+      <section class="py-24 bg-white border-t border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
+            <!-- 左侧：配置描述 -->
+            <div class="order-2 lg:order-1">
+              <h2 class="text-base text-primary font-semibold tracking-wide uppercase" data-i18n="config.subtitle">灵活定制</h2>
+              <p class="mt-2 text-3xl sm:text-4xl font-extrabold text-gray-900 mb-6" data-i18n="config.title">
+                🎛️ 可配置性
+              </p>
+              <p class="text-lg text-gray-600 mb-6" data-i18n="config.desc">
+                通过简单的 HTML 属性，您可以隐藏/显示任意工具：
+              </p>
+              <ul class="space-y-3 text-gray-700">
+                <li class="flex items-start">
+                  <i class="fas fa-check-circle text-secondary mt-1 mr-2 flex-shrink-0"></i>
+                  <span data-i18n="config.feature1">灵活控制工具栏：画笔、矩形、圆形、文本、图片、缩放等。</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check-circle text-secondary mt-1 mr-2 flex-shrink-0"></i>
+                  <span data-i18n="config.feature2">自定义文件操作：导出 PNG、保存/加载 JSON、清空画布按钮。</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check-circle text-secondary mt-1 mr-2 flex-shrink-0"></i>
+                  <span data-i18n="config.feature3">保持核心 Canvas 逻辑，只暴露所需 UI。</span>
+                </li>
+              </ul>
+            </div>
+            <!-- 右侧：配置示意图 -->
+            <div class="order-1 lg:order-2 mb-10 lg:mb-0">
+              <div class="flex justify-center">
+                <img
+                  src="tool.png"
+                  alt="Configurable Editor Preview"
+                  class="h-auto rounded-lg shadow-lg"
+                  style="max-width: 55px;"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- [/MODULE] config_可配置性区域 -- 强调配置能力 -->
+
+      <!-- [MODULE] documentation_API文档区域 -->
+      <section id="documentation" class="py-24 bg-gray-50 border-t border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center mb-16">
+            <h2 class="text-base text-primary font-semibold tracking-wide uppercase" data-i18n="docs.subtitle">详细参考</h2>
+            <p class="mt-2 text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900" data-i18n="docs.title">
+              📖 API 文档
+            </p>
+          </div>
+
+          <!-- 配置属性表格 -->
+          <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-100 mb-12">
+            <h3 class="text-2xl font-bold mb-6 flex items-center text-gray-800">
+              <i class="fas fa-cog mr-3 text-primary"></i>
+              <span data-i18n="docs.config">配置属性</span>
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-gray-50">
+                    <th class="px-4 py-3 text-sm font-semibold text-gray-700 border-b" data-i18n="docs.table.attr">属性</th>
+                    <th class="px-4 py-3 text-sm font-semibold text-gray-700 border-b" data-i18n="docs.table.type">类型</th>
+                    <th class="px-4 py-3 text-sm font-semibold text-gray-700 border-b" data-i18n="docs.table.default">默认值</th>
+                    <th class="px-4 py-3 text-sm font-semibold text-gray-700 border-b" data-i18n="docs.table.desc">说明</th>
+                  </tr>
+                </thead>
+                <tbody class="text-sm text-gray-600">
+                  <tr><td class="px-4 py-3 border-b font-mono text-indigo-600">title</td><td class="px-4 py-3 border-b">string</td><td class="px-4 py-3 border-b">"Canvas Editor"</td><td class="px-4 py-3 border-b" data-i18n="config.attr.title">编辑器标题</td></tr>
+                  <tr class="bg-gray-50"><td class="px-4 py-3 border-b font-mono text-indigo-600">show-pencil</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.pencil">显示画笔工具</td></tr>
+                  <tr><td class="px-4 py-3 border-b font-mono text-indigo-600">show-rectangle</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.rectangle">显示矩形工具</td></tr>
+                  <tr class="bg-gray-50"><td class="px-4 py-3 border-b font-mono text-indigo-600">show-circle</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.circle">显示圆形工具</td></tr>
+                  <tr><td class="px-4 py-3 border-b font-mono text-indigo-600">show-text</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.text">显示文本工具</td></tr>
+                  <tr class="bg-gray-50"><td class="px-4 py-3 border-b font-mono text-indigo-600">show-image</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.image">显示图片导入</td></tr>
+                  <tr><td class="px-4 py-3 border-b font-mono text-indigo-600">show-zoom</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.zoom">显示缩放控制</td></tr>
+                  <tr class="bg-gray-50"><td class="px-4 py-3 border-b font-mono text-indigo-600">show-download</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.download">显示 PNG 导出</td></tr>
+                  <tr><td class="px-4 py-3 border-b font-mono text-indigo-600">show-export</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.export">显示 JSON 保存</td></tr>
+                  <tr class="bg-gray-50"><td class="px-4 py-3 border-b font-mono text-indigo-600">show-import</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.import">显示 JSON 加载</td></tr>
+                  <tr><td class="px-4 py-3 border-b font-mono text-indigo-600">show-color</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.color">显示颜色选择器</td></tr>
+                  <tr class="bg-gray-50"><td class="px-4 py-3 border-b font-mono text-indigo-600">show-clear</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.clear">显示清空画布按钮</td></tr>
+                  <tr><td class="px-4 py-3 border-b font-mono text-indigo-600">lang</td><td class="px-4 py-3 border-b">string</td><td class="px-4 py-3 border-b">"zh"</td><td class="px-4 py-3 border-b" data-i18n="config.attr.lang">界面语言（"zh" 中文，"en" 英文）</td></tr>
+                  <tr class="bg-gray-50"><td class="px-4 py-3 border-b font-mono text-indigo-600">theme-color</td><td class="px-4 py-3 border-b">string</td><td class="px-4 py-3 border-b">"#5450dc"</td><td class="px-4 py-3 border-b" data-i18n="config.attr.theme">主题色（影响按钮、悬停状态等）</td></tr>
+                  <tr><td class="px-4 py-3 border-b font-mono text-indigo-600">initial-data</td><td class="px-4 py-3 border-b">string</td><td class="px-4 py-3 border-b">-</td><td class="px-4 py-3 border-b" data-i18n="config.attr.initial">初始化 JSON 数据</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 事件说明 -->
+          <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-100 mb-12">
+            <h3 class="text-2xl font-bold mb-6 flex items-center text-gray-800">
+              <i class="fas fa-bolt mr-3 text-secondary"></i>
+              <span data-i18n="docs.events">事件</span>
+            </h3>
+            <div class="space-y-6">
+              <div class="border-l-4 border-indigo-500 pl-4">
+                <h4 class="font-bold text-lg text-gray-800 mb-2">editor-change</h4>
+                <p class="text-gray-600 mb-3" data-i18n="docs.event.change.desc">画布内容发生变化时触发，<code class="bg-gray-100 px-2 py-1 rounded text-sm">e.detail.objects</code> 包含所有绘图对象。</p>
+                <div class="bg-gray-800 p-4 rounded-lg overflow-x-auto">
+                  <pre class="m-0"><code id="eventChangeCode" class="text-sm text-green-400" data-code="eventChange"></code></pre>
+                </div>
+              </div>
+              <div class="border-l-4 border-emerald-500 pl-4">
+                <h4 class="font-bold text-lg text-gray-800 mb-2">editor-close</h4>
+                <p class="text-gray-600 mb-3" data-i18n="docs.event.close.desc">编辑器关闭时触发。</p>
+                <div class="bg-gray-800 p-4 rounded-lg overflow-x-auto">
+                  <pre class="m-0"><code id="eventCloseCode" class="text-sm text-green-400" data-code="eventClose"></code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 对象类型说明 -->
+          <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+            <h3 class="text-2xl font-bold mb-6 flex items-center text-gray-800">
+              <i class="fas fa-shapes mr-3 text-purple-500"></i>
+              <span data-i18n="docs.objects">对象类型</span>
+            </h3>
+            <p class="text-gray-600 mb-6" data-i18n="docs.objects.intro">每个绘图对象都有以下基础属性：</p>
+            <div class="overflow-x-auto mb-8">
+              <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr class="bg-gray-50">
+                    <th class="px-4 py-3 font-semibold text-gray-700 border-b" data-i18n="docs.table.attr">属性</th>
+                    <th class="px-4 py-3 font-semibold text-gray-700 border-b" data-i18n="docs.table.type">类型</th>
+                    <th class="px-4 py-3 font-semibold text-gray-700 border-b" data-i18n="docs.table.desc">说明</th>
+                  </tr>
+                </thead>
+                <tbody class="text-gray-600">
+                  <tr><td class="px-4 py-2 border-b font-mono text-indigo-600">id</td><td class="px-4 py-2 border-b">string</td><td class="px-4 py-2 border-b" data-i18n="docs.objects.id">唯一标识符</td></tr>
+                  <tr class="bg-gray-50"><td class="px-4 py-2 border-b font-mono text-indigo-600">type</td><td class="px-4 py-2 border-b">string</td><td class="px-4 py-2 border-b" data-i18n="docs.objects.type.desc">对象类型: RECTANGLE, CIRCLE, PATH, TEXT, IMAGE</td></tr>
+                  <tr><td class="px-4 py-2 border-b font-mono text-indigo-600">x, y</td><td class="px-4 py-2 border-b">number</td><td class="px-4 py-2 border-b" data-i18n="docs.objects.xy">坐标位置</td></tr>
+                  <tr class="bg-gray-50"><td class="px-4 py-2 border-b font-mono text-indigo-600">color</td><td class="px-4 py-2 border-b">string</td><td class="px-4 py-2 border-b" data-i18n="docs.objects.color">颜色值 (如 #3b82f6)</td></tr>
+                  <tr><td class="px-4 py-2 border-b font-mono text-indigo-600">lineWidth</td><td class="px-4 py-2 border-b">number</td><td class="px-4 py-2 border-b" data-i18n="docs.objects.linewidth">线条宽度</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <h5 class="font-bold text-gray-700 mb-2" data-i18n="docs.objects.rect">📦 矩形 (RECTANGLE)</h5>
+                <p class="text-sm text-gray-600"><code>width</code>, <code>height</code></p>
+              </div>
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <h5 class="font-bold text-gray-700 mb-2" data-i18n="docs.objects.circle">⚪ 圆形 (CIRCLE)</h5>
+                <p class="text-sm text-gray-600"><code>radius</code></p>
+              </div>
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <h5 class="font-bold text-gray-700 mb-2" data-i18n="docs.objects.path">✏️ 画笔 (PATH)</h5>
+                <p class="text-sm text-gray-600"><code>points</code> - <span data-i18n="docs.objects.path.desc">坐标数组</span></p>
+              </div>
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <h5 class="font-bold text-gray-700 mb-2" data-i18n="docs.objects.text">📝 文本 (TEXT)</h5>
+                <p class="text-sm text-gray-600"><code>text</code>, <code>fontSize</code></p>
+              </div>
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <h5 class="font-bold text-gray-700 mb-2" data-i18n="docs.objects.image">🖼️ 图片 (IMAGE)</h5>
+                <p class="text-sm text-gray-600"><code>width</code>, <code>height</code>, <code>dataUrl</code></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- [/MODULE] documentation_API文档区域 -->
+    </main>
+
+    <!-- 页脚 -->
+    <!-- [MODULE] footer_网站页脚 -->
+    <footer class="bg-gray-800 mt-12">
+      <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <!-- 品牌信息 -->
+          <div>
+            <h4 class="text-lg font-semibold text-white mb-4" data-i18n="footer.brand">Canvas Drawing Editor</h4>
+            <p class="text-gray-400 text-sm" data-i18n="footer.tagline">零依赖的 Web Component 画布编辑器。</p>
+          </div>
+          <!-- 资源链接 -->
+          <div>
+            <h4 class="text-md font-semibold text-white mb-4" data-i18n="footer.resources">资源</h4>
+            <ul class="space-y-2">
+              <li><a href="javascript:void(0);" class="text-gray-400 hover:text-primary text-sm" data-i18n="footer.api">API 文档</a></li>
+              <li><a href="javascript:void(0);" class="text-gray-400 hover:text-primary text-sm" data-i18n="footer.examples">示例</a></li>
+              <li><a href="javascript:void(0);" class="text-gray-400 hover:text-primary text-sm" data-i18n="footer.roadmap">路线图</a></li>
+            </ul>
+          </div>
+          <!-- 社区 -->
+          <div>
+            <h4 class="text-md font-semibold text-white mb-4" data-i18n="footer.community">社区</h4>
+            <ul class="space-y-2">
+              <li><a href="javascript:void(0);" class="text-gray-400 hover:text-primary text-sm">GitHub</a></li>
+              <li><a href="javascript:void(0);" class="text-gray-400 hover:text-primary text-sm" data-i18n="footer.issues">Issue 报告</a></li>
+            </ul>
+          </div>
+
+        </div>
+        <div class="mt-12 border-t border-gray-700 pt-8">
+          <p class="text-center text-gray-500 text-sm" data-i18n="footer.copyright">
+            © 2025 Canvas Drawing Editor. 保留所有权利。
+          </p>
+        </div>
+      </div>
+    </footer>
+    <!-- [/MODULE] footer_网站页脚 -- 包含版权和链接 -->
+
+    <!-- [JSMOD] page_交互逻辑 -->
+    <script>
+      // 国际化配置
+      const i18n = {
+        zh: {
+          'nav.features': '特性',
+          'nav.installation': '安装',
+          'nav.usage': '使用',
+          'nav.documentation': '文档',
+          'hero.title': '强大的 <span class="text-primary">Canvas</span> 画布编辑器',
+          'hero.subtitle': '此组件为 Web Component，需要配合框架或原生 HTML 使用。<strong>零依赖</strong>，支持 Vue 2/3、React、Angular 和原生 HTML。',
+          'hero.start': '<i class="fas fa-download mr-2"></i> 立即开始',
+          'hero.demo': '<i class="fas fa-play-circle mr-2 text-primary"></i> 查看演示',
+          'features.subtitle': '核心能力',
+          'features.title': '✨ 功能特性一览',
+          'features.drawing.title': '🎨 绘图工具集',
+          'features.drawing.desc': '支持画笔、矩形、圆形、文本等基础图形绘制，满足多样化创作需求。',
+          'features.image.title': '🖼️ 图片导入与编辑',
+          'features.image.desc': '轻松导入图片到画布，并进行后续的编辑和操作。',
+          'features.zoom.title': '🔍 缩放与平移',
+          'features.zoom.desc': '使用鼠标滚轮以光标为中心缩放，支持流畅的拖拽平移画布。',
+          'features.export.title': '💾 灵活的导入导出',
+          'features.export.desc': '支持 JSON 格式保存/加载项目，PNG 格式导出图像，以及一键清空画布。',
+          'features.zerodep.title': '⚡ 零依赖与轻量',
+          'features.zerodep.desc': '纯 JavaScript 实现，gzip 后仅约 10KB，不引入任何框架负担。',
+          'install.subtitle': '快速上手',
+          'install.title': '📦 安装与集成',
+          'install.npm': '<i class="fab fa-npm mr-3 text-red-500"></i> NPM 安装',
+          'install.npm.desc': '通过 npm 或 yarn 安装到您的项目中：',
+          'install.cdn': '<i class="fas fa-cloud-download-alt mr-3 text-blue-500"></i> CDN 引入',
+          'install.cdn.desc': '或者直接通过 CDN 在 HTML 中引入：',
+          'usage.subtitle': '开始使用',
+          'usage.title': '🚀 如何使用',
+          'usage.native': '原生 HTML',
+          'usage.vue': 'Vue 3 集成',
+          'usage.react': 'React 集成',
+          'usage.angular': 'Angular 集成',
+          'config.subtitle': '灵活定制',
+          'config.title': '🎛️ 可配置性',
+          'config.desc': '通过简单的 HTML 属性，您可以隐藏/显示任意工具：',
+          'config.feature1': '灵活控制工具栏：画笔、矩形、圆形、文本、图片、缩放等。',
+          'config.feature2': '自定义文件操作：导出 PNG、保存/加载 JSON、清空画布按钮。',
+          'config.feature3': '保持核心 Canvas 逻辑，只暴露所需 UI。',
+          'docs.subtitle': '详细参考',
+          'docs.title': '📖 API 文档',
+          'docs.config': '配置属性',
+          'docs.events': '事件',
+          'docs.objects': '对象类型',
+          'docs.table.attr': '属性',
+          'docs.table.type': '类型',
+          'docs.table.default': '默认值',
+          'docs.table.desc': '说明',
+          'docs.event.change.desc': '画布内容发生变化时触发，<code class="bg-gray-100 px-2 py-1 rounded text-sm">e.detail.objects</code> 包含所有绘图对象。',
+          'docs.event.close.desc': '编辑器关闭时触发。',
+          'docs.objects.intro': '每个绘图对象都有以下基础属性：',
+          'docs.objects.id': '唯一标识符',
+          'docs.objects.type.desc': '对象类型: RECTANGLE, CIRCLE, PATH, TEXT, IMAGE',
+          'docs.objects.xy': '坐标位置',
+          'docs.objects.color': '颜色值 (如 #3b82f6)',
+          'docs.objects.linewidth': '线条宽度',
+          'docs.objects.rect': '📦 矩形 (RECTANGLE)',
+          'docs.objects.circle': '⚪ 圆形 (CIRCLE)',
+          'docs.objects.path': '✏️ 画笔 (PATH)',
+          'docs.objects.path.desc': '坐标数组',
+          'docs.objects.text': '📝 文本 (TEXT)',
+          'docs.objects.image': '🖼️ 图片 (IMAGE)',
+          'install.html.title': '<i class="fas fa-code mr-3 text-yellow-600"></i> 原生 HTML 使用',
+          'install.html.desc': '直接引入 UMD 包，并在 DOM 中使用自定义标签：',
+          'install.html.note': '（注意：此组件为 Web Component，需要配合框架或原生 HTML 使用）',
+          'usage.vue.desc': '在 Vue 3 组件中使用 Web Component：',
+          'usage.react.desc': 'React 中使用 Web Component 的方式与原生类似，但需注意属性传递：',
+          'usage.angular.desc': 'Angular 中使用 Web Component 需要在模块中添加 CUSTOM_ELEMENTS_SCHEMA：',
+          'copy': '<i class="fas fa-copy"></i> 复制',
+          'footer.brand': 'Canvas Drawing Editor',
+          'footer.tagline': '零依赖的 Web Component 画布编辑器。',
+          'footer.resources': '资源',
+          'footer.api': 'API 文档',
+          'footer.examples': '示例',
+          'footer.roadmap': '路线图',
+          'footer.community': '社区',
+          'footer.issues': 'Issue 报告',
+          'footer.copyright': '© 2025 Canvas Drawing Editor. 保留所有权利。',
+          'copy.copied': '已复制',
+          'config.attr.title': '编辑器标题',
+          'config.attr.pencil': '显示画笔工具',
+          'config.attr.rectangle': '显示矩形工具',
+          'config.attr.circle': '显示圆形工具',
+          'config.attr.text': '显示文本工具',
+          'config.attr.image': '显示图片导入',
+          'config.attr.zoom': '显示缩放控制',
+          'config.attr.download': '显示 PNG 导出',
+          'config.attr.export': '显示 JSON 保存',
+          'config.attr.import': '显示 JSON 加载',
+          'config.attr.color': '显示颜色选择器',
+          'config.attr.clear': '显示清空画布按钮',
+          'config.attr.lang': '界面语言（"zh" 中文，"en" 英文）',
+          'config.attr.theme': '主题色（影响按钮、悬停状态等）',
+          'config.attr.initial': '初始化 JSON 数据',
+        },
+        en: {
+          'nav.features': 'Features',
+          'nav.installation': 'Install',
+          'nav.usage': 'Usage',
+          'nav.documentation': 'Docs',
+          'hero.title': 'Powerful <span class="text-primary">Canvas</span> Drawing Editor',
+          'hero.subtitle': 'A Web Component canvas editor. <strong>Zero dependencies</strong>, works with Vue 2/3, React, Angular, and vanilla HTML.',
+          'hero.start': '<i class="fas fa-download mr-2"></i> Get Started',
+          'hero.demo': '<i class="fas fa-play-circle mr-2 text-primary"></i> View Demo',
+          'features.subtitle': 'Core Capabilities',
+          'features.title': '✨ Feature Overview',
+          'features.drawing.title': '🎨 Drawing Tools',
+          'features.drawing.desc': 'Pencil, rectangles, circles, text and more for diverse creative needs.',
+          'features.image.title': '🖼️ Image Import & Edit',
+          'features.image.desc': 'Easily import images to canvas and perform subsequent editing.',
+          'features.zoom.title': '🔍 Zoom & Pan',
+          'features.zoom.desc': 'Mouse wheel zoom centered on cursor, smooth canvas panning.',
+          'features.export.title': '💾 Flexible Import/Export',
+          'features.export.desc': 'Save/load JSON projects, export PNG images, clear canvas with one click.',
+          'features.zerodep.title': '⚡ Zero Dependencies & Lightweight',
+          'features.zerodep.desc': 'Pure JavaScript, only ~10KB gzipped, no framework overhead.',
+          'install.subtitle': 'Quick Start',
+          'install.title': '📦 Installation & Integration',
+          'install.npm': '<i class="fab fa-npm mr-3 text-red-500"></i> NPM Install',
+          'install.npm.desc': 'Install via npm or yarn:',
+          'install.cdn': '<i class="fas fa-cloud-download-alt mr-3 text-blue-500"></i> CDN Import',
+          'install.cdn.desc': 'Or import directly via CDN in HTML:',
+          'usage.subtitle': 'Get Started',
+          'usage.title': '🚀 How to Use',
+          'usage.native': 'Vanilla HTML',
+          'usage.vue': 'Vue 3 Integration',
+          'usage.react': 'React Integration',
+          'usage.angular': 'Angular Integration',
+          'config.subtitle': 'Flexible Customization',
+          'config.title': '🎛️ Configurability',
+          'config.desc': 'Hide/show any tool via simple HTML attributes:',
+          'config.feature1': 'Flexible toolbar control: pencil, rectangle, circle, text, image, zoom, etc.',
+          'config.feature2': 'Custom file operations: export PNG, save/load JSON, clear canvas.',
+          'config.feature3': 'Keep core Canvas logic, expose only needed UI.',
+          'docs.subtitle': 'Reference',
+          'docs.title': '📖 API Documentation',
+          'docs.config': 'Configuration',
+          'docs.events': 'Events',
+          'docs.objects': 'Object Types',
+          'docs.table.attr': 'Attribute',
+          'docs.table.type': 'Type',
+          'docs.table.default': 'Default',
+          'docs.table.desc': 'Description',
+          'docs.event.change.desc': 'Triggered when canvas content changes, <code class="bg-gray-100 px-2 py-1 rounded text-sm">e.detail.objects</code> contains all drawing objects.',
+          'docs.event.close.desc': 'Triggered when editor closes.',
+          'docs.objects.intro': 'Each drawing object has the following base properties:',
+          'docs.objects.id': 'Unique identifier',
+          'docs.objects.type.desc': 'Object type: RECTANGLE, CIRCLE, PATH, TEXT, IMAGE',
+          'docs.objects.xy': 'Coordinate position',
+          'docs.objects.color': 'Color value (e.g. #3b82f6)',
+          'docs.objects.linewidth': 'Line width',
+          'docs.objects.rect': '📦 Rectangle (RECTANGLE)',
+          'docs.objects.circle': '⚪ Circle (CIRCLE)',
+          'docs.objects.path': '✏️ Pencil (PATH)',
+          'docs.objects.path.desc': 'Coordinate array',
+          'docs.objects.text': '📝 Text (TEXT)',
+          'docs.objects.image': '🖼️ Image (IMAGE)',
+          'install.html.title': '<i class="fas fa-code mr-3 text-yellow-600"></i> Vanilla HTML Usage',
+          'install.html.desc': 'Import UMD bundle directly and use custom element in DOM:',
+          'install.html.note': '(Note: This is a Web Component, use with frameworks or vanilla HTML)',
+          'usage.vue.desc': 'Use Web Component in Vue 3:',
+          'usage.react.desc': 'Using Web Component in React is similar to native, but note property passing:',
+          'usage.angular.desc': 'Using Web Component in Angular requires adding CUSTOM_ELEMENTS_SCHEMA:',
+          'copy': '<i class="fas fa-copy"></i> Copy',
+          'footer.brand': 'Canvas Drawing Editor',
+          'footer.tagline': 'Zero-dependency Web Component canvas editor.',
+          'footer.resources': 'Resources',
+          'footer.api': 'API Docs',
+          'footer.examples': 'Examples',
+          'footer.roadmap': 'Roadmap',
+          'footer.community': 'Community',
+          'footer.issues': 'Report Issues',
+          'footer.copyright': '© 2025 Canvas Drawing Editor. All rights reserved.',
+          'copy.copied': 'Copied',
+          'config.attr.title': 'Editor title',
+          'config.attr.pencil': 'Show pencil tool',
+          'config.attr.rectangle': 'Show rectangle tool',
+          'config.attr.circle': 'Show circle tool',
+          'config.attr.text': 'Show text tool',
+          'config.attr.image': 'Show image import',
+          'config.attr.zoom': 'Show zoom control',
+          'config.attr.download': 'Show PNG export',
+          'config.attr.export': 'Show JSON save',
+          'config.attr.import': 'Show JSON load',
+          'config.attr.color': 'Show color picker',
+          'config.attr.clear': 'Show clear canvas button',
+          'config.attr.lang': 'UI language ("zh" Chinese, "en" English)',
+          'config.attr.theme': 'Theme color (affects buttons, hover states, etc.)',
+          'config.attr.initial': 'Initial JSON data',
+        }
+      };
+
+      // 代码块翻译配置
+      const codeBlocks = {
+        vue: {
+          zh: `&lt;template&gt;
+  &lt;canvas-drawing-editor
+    title="Vue 画板"
+    style="width: 100%; height: 600px;"
+  &gt;&lt;/canvas-drawing-editor&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+// 如果需要配置属性，可以在这里通过 ref 或 props 传递
+// 注意：Web Component 的属性绑定可能需要特殊处理，具体参考框架文档
+&lt;/script&gt;`,
+          en: `&lt;template&gt;
+  &lt;canvas-drawing-editor
+    title="Vue Canvas"
+    style="width: 100%; height: 600px;"
+  &gt;&lt;/canvas-drawing-editor&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+// Configure properties here via ref or props if needed
+// Note: Web Component property binding may need special handling, refer to framework docs
+&lt;/script&gt;`
+        },
+        react: {
+          zh: `import React from 'react';
+// 假设组件已通过 script 标签加载或已导入
+
+const MyEditor = () =&gt; {
+  return (
+    &lt;canvas-drawing-editor
+      title="React 画板"
+      style={{ width: '100%', height: '600px' }}
+    /&gt;
+  );
+};
+
+export default MyEditor;`,
+          en: `import React from 'react';
+// Assuming component is loaded via script tag or imported
+
+const MyEditor = () =&gt; {
+  return (
+    &lt;canvas-drawing-editor
+      title="React Canvas"
+      style={{ width: '100%', height: '600px' }}
+    /&gt;
+  );
+};
+
+export default MyEditor;`
+        },
+        eventChange: {
+          zh: `document.addEventListener('editor-change', (e) =&gt; {
+  console.log('对象列表:', e.detail.objects);
+  localStorage.setItem('canvas-data', JSON.stringify({ objects: e.detail.objects }));
+});`,
+          en: `document.addEventListener('editor-change', (e) =&gt; {
+  console.log('Objects:', e.detail.objects);
+  localStorage.setItem('canvas-data', JSON.stringify({ objects: e.detail.objects }));
+});`
+        },
+        eventClose: {
+          zh: `document.addEventListener('editor-close', () =&gt; {
+  console.log('编辑器已关闭');
+});`,
+          en: `document.addEventListener('editor-close', () =&gt; {
+  console.log('Editor closed');
+});`
+        }
+      };
+
+      let currentLang = 'zh';
+      let currentTheme = 'light';
+
+      // 切换语言
+      function setLanguage(lang) {
+        currentLang = lang;
+        localStorage.setItem('doc-lang', lang);
+        document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+        document.getElementById('langText').textContent = lang === 'zh' ? 'EN' : '中';
+
+        // 更新所有带 data-i18n 属性的元素
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+          const key = el.getAttribute('data-i18n');
+          if (i18n[lang][key]) {
+            el.innerHTML = i18n[lang][key];
+          }
+        });
+
+        // 更新代码块
+        document.querySelectorAll('[data-code]').forEach(el => {
+          const key = el.getAttribute('data-code');
+          if (codeBlocks[key] && codeBlocks[key][lang]) {
+            el.innerHTML = codeBlocks[key][lang];
+          }
+        });
+      }
+
+      // 切换主题
+      function setTheme(theme) {
+        currentTheme = theme;
+        localStorage.setItem('doc-theme', theme);
+        const icon = document.getElementById('themeIcon');
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+          icon.classList.remove('fa-moon');
+          icon.classList.add('fa-sun');
+        } else {
+          document.documentElement.classList.remove('dark');
+          icon.classList.remove('fa-sun');
+          icon.classList.add('fa-moon');
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        // 初始化语言和主题
+        const savedLang = localStorage.getItem('doc-lang') || 'zh';
+        const savedTheme = localStorage.getItem('doc-theme') || 'light';
+        setLanguage(savedLang);
+        setTheme(savedTheme);
+
+        // 语言切换按钮
+        document.getElementById('langToggle').addEventListener('click', () => {
+          setLanguage(currentLang === 'zh' ? 'en' : 'zh');
+        });
+
+        // 主题切换按钮
+        document.getElementById('themeToggle').addEventListener('click', () => {
+          setTheme(currentTheme === 'light' ? 'dark' : 'light');
+        });
+
+        // 代码块复制功能
+        const setupCopyButton = (buttonId, codeId) => {
+          const button = document.getElementById(buttonId);
+          const codeBlock = document.getElementById(codeId);
+
+          if (button && codeBlock) {
+            button.addEventListener('click', () => {
+              let textToCopy = codeBlock.innerText;
+
+              navigator.clipboard.writeText(textToCopy).then(() => {
+                const originalText = button.innerHTML;
+                const copiedText = i18n[currentLang]['copy.copied'] || 'Copied';
+                button.innerHTML = '<i class="fas fa-check"></i> ' + copiedText;
+                button.classList.remove('text-gray-400');
+                button.classList.add('text-secondary');
+                setTimeout(() => {
+                  button.innerHTML = originalText;
+                  button.classList.add('text-gray-400');
+                  button.classList.remove('text-secondary');
+                }, 2000);
+              }).catch(err => {
+                console.error('Copy failed:', err);
+              });
+            });
+          }
+        };
+
+        setupCopyButton('copyNativeBtn', 'nativeCodeBlock');
+        setupCopyButton('copyVueBtn', 'vueCodeBlock');
+        setupCopyButton('copyReactBtn', 'reactCodeBlock');
+        setupCopyButton('copyAngularBtn', 'angularCodeBlock');
+
+        // 模拟 Web Component 注册
+        if (!customElements.get('canvas-drawing-editor')) {
+          class CanvasDrawingEditor extends HTMLElement {
+            constructor() {
+              super();
+              this.attachShadow({ mode: 'open' });
+              this.shadowRoot.innerHTML = `
+                <style>
+                  :host {
+                    display: block;
+                    border: 2px dashed #ccc;
+                    padding: 20px;
+                    text-align: center;
+                    background-color: #fefefe;
+                    color: #6b7280;
+                    font-family: sans-serif;
+                  }
+                </style>
+                <div>
+                  <strong>[CanvasDrawingEditor Component Placeholder]</strong>
+                  <p>Title: ${this.getAttribute('title') || 'Default Title'}</p>
+                  <p>此区域应被实际的 Canvas 编辑器内容替换。</p>
+                </div>
+              `;
+            }
+          }
+          customElements.define('canvas-drawing-editor', CanvasDrawingEditor);
+        }
+      });
+    </script>
+    <!-- [/JSMOD] page_交互逻辑 -- 包含代码复制功能和Web Component占位符模拟 -->
+  </body>
+</html>
