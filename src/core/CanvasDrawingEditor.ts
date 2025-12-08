@@ -375,35 +375,49 @@ export class CanvasDrawingEditor extends HTMLElement {
     if (!initialData) return;
 
     try {
-      const data = JSON.parse(initialData);
-      if (data.objects && Array.isArray(data.objects)) {
-        this.objects = data.objects;
-        this.selectedId = null;
+      const parsed = JSON.parse(initialData);
 
-        // 每次通过 initial-data 加载数据时，重置缩放和平移
-        // 确保主画布和小地图都从统一的 100% 缩放、无平移状态开始
-        this.scale = 1;
-        this.panOffset = { x: 0, y: 0 };
-        this.updateZoomDisplay();
-
-        // 应用热区数据（替换文本内容）
-        this.applyHotzoneData();
-
-        // 重新加载图片（异步加载完成后需要重新渲染）
-        this.objects.forEach(obj => {
-          if (obj.type === 'IMAGE' && (obj as ImageObject).dataUrl) {
-            const img = new Image();
-            img.onload = () => {
-              (obj as ImageObject).imageElement = img;
-              this.renderCanvas();
-            };
-            img.src = (obj as ImageObject).dataUrl;
-          }
-        });
-
-        // 更新UI状态（隐藏空画布提示等）
-        this.updateUI();
+      // 支持两种格式：
+      // 1. 对象格式：{ "objects": [...] }
+      // 2. 数组格式：[...] （用户可能直接传入 e.detail.objects）
+      let objectsArray: CanvasObject[];
+      if (Array.isArray(parsed)) {
+        // 数组格式，直接使用
+        objectsArray = parsed;
+      } else if (parsed.objects && Array.isArray(parsed.objects)) {
+        // 对象格式，取 objects 属性
+        objectsArray = parsed.objects;
+      } else {
+        console.error('initial-data 格式无效，需要数组或包含 objects 数组的对象');
+        return;
       }
+
+      this.objects = objectsArray;
+      this.selectedId = null;
+
+      // 每次通过 initial-data 加载数据时，重置缩放和平移
+      // 确保主画布和小地图都从统一的 100% 缩放、无平移状态开始
+      this.scale = 1;
+      this.panOffset = { x: 0, y: 0 };
+      this.updateZoomDisplay();
+
+      // 应用热区数据（替换文本内容）
+      this.applyHotzoneData();
+
+      // 重新加载图片（异步加载完成后需要重新渲染）
+      this.objects.forEach(obj => {
+        if (obj.type === 'IMAGE' && (obj as ImageObject).dataUrl) {
+          const img = new Image();
+          img.onload = () => {
+            (obj as ImageObject).imageElement = img;
+            this.renderCanvas();
+          };
+          img.src = (obj as ImageObject).dataUrl;
+        }
+      });
+
+      // 更新UI状态（隐藏空画布提示等）
+      this.updateUI();
     } catch (err) {
       console.error('Failed to parse initial-data:', err);
     }
