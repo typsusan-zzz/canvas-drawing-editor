@@ -239,43 +239,26 @@
                 🎨 绘图工具集
               </h3>
               <p class="text-gray-600" data-i18n="features.drawing.desc">
-                支持画笔、矩形、圆形、线条、箭头、多边形、文本等基础图形绘制，满足多样化创作需求。
+                画笔、矩形、圆形、线条、箭头、多边形、文本、图片导入，满足多样化创作需求。
               </p>
             </div>
-            <!-- 特性卡片 2: 图片支持 -->
+            <!-- 特性卡片 2: 编辑功能 -->
             <div
               class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
             >
               <div
                 class="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-primary mb-4"
               >
-                <i class="fas fa-image text-xl"> </i>
+                <i class="fas fa-edit text-xl"> </i>
               </div>
-              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.image.title">
-                🖼️ 图片导入与编辑
+              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.edit.title">
+                ✏️ 高级编辑
               </h3>
-              <p class="text-gray-600" data-i18n="features.image.desc">
-                轻松导入图片到画布，并进行后续的编辑和操作。
+              <p class="text-gray-600" data-i18n="features.edit.desc">
+                撤销/重做、图层管理、组合/解组、对齐分布、缩放平移。
               </p>
             </div>
-            <!-- 特性卡片 3: 缩放平移 -->
-            <div
-              class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
-            >
-              <div
-                class="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-primary mb-4"
-              >
-                <i class="fas fa-search-plus text-xl"> </i>
-              </div>
-              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.zoom.title">
-                🔍 缩放与平移
-              </h3>
-              <p class="text-gray-600" data-i18n="features.zoom.desc">
-                使用鼠标滚轮以光标为中心缩放，支持流畅的拖拽平移画布。
-              </p>
-            </div>
-
-            <!-- 特性卡片 5: 导入导出 -->
+            <!-- 特性卡片 3: 导入导出 -->
             <div
               class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
             >
@@ -285,29 +268,13 @@
                 <i class="fas fa-file-import text-xl"> </i>
               </div>
               <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.export.title">
-                💾 灵活的导入导出
+                💾 导入导出
               </h3>
               <p class="text-gray-600" data-i18n="features.export.desc">
-                支持 JSON 格式保存/加载项目，PNG 格式导出图像，以及一键清空画布。
+                JSON 保存/加载项目，PNG 导出图像，一键清空画布。
               </p>
             </div>
-            <!-- 特性卡片 6: 零依赖与轻量 -->
-            <div
-              class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
-            >
-              <div
-                class="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-primary mb-4"
-              >
-                <i class="fas fa-bolt text-xl"> </i>
-              </div>
-              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.zerodep.title">
-                ⚡ 零依赖与轻量
-              </h3>
-              <p class="text-gray-600" data-i18n="features.zerodep.desc">
-                纯 JavaScript 实现，gzip 后仅约 15KB，不引入任何框架负担。
-              </p>
-            </div>
-            <!-- 特性卡片 7: 热区功能 -->
+            <!-- 特性卡片 4: 热区功能 -->
             <div
               class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
             >
@@ -323,68 +290,36 @@
                 给文本绑定动态变量，实现模板化设计，动态替换文本内容。
               </p>
             </div>
-            <!-- 特性卡片 8: 撤销/重做 -->
+            <!-- 特性卡片 5: 零依赖 -->
             <div
               class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
             >
               <div
                 class="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-primary mb-4"
               >
-                <i class="fas fa-undo-alt text-xl"> </i>
+                <i class="fas fa-bolt text-xl"> </i>
               </div>
-              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.undo.title">
-                ↩️ 撤销/重做
+              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.zerodep.title">
+                ⚡ 零依赖轻量
               </h3>
-              <p class="text-gray-600" data-i18n="features.undo.desc">
-                完整的历史记录支持，支持 Ctrl+Z 撤销和 Ctrl+Y 重做操作。
+              <p class="text-gray-600" data-i18n="features.zerodep.desc">
+                纯 JavaScript 实现，gzip 后仅约 20KB，无框架负担。
               </p>
             </div>
-            <!-- 特性卡片 9: 图层管理 -->
+            <!-- 特性卡片 6: 跨框架 -->
             <div
               class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
             >
               <div
-                class="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-primary mb-4"
+                class="flex items-center justify-center h-12 w-12 rounded-full bg-green-100 text-green-500 mb-4"
               >
-                <i class="fas fa-layer-group text-xl"> </i>
+                <i class="fas fa-plug text-xl"> </i>
               </div>
-              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.layers.title">
-                📚 图层管理
+              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.framework.title">
+                🔌 跨框架兼容
               </h3>
-              <p class="text-gray-600" data-i18n="features.layers.desc">
-                图层上移/下移/置顶/置底，可见性和锁定控制。
-              </p>
-            </div>
-            <!-- 特性卡片 10: 组合/解组 -->
-            <div
-              class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
-            >
-              <div
-                class="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-primary mb-4"
-              >
-                <i class="fas fa-object-group text-xl"> </i>
-              </div>
-              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.group.title">
-                🔗 组合/解组
-              </h3>
-              <p class="text-gray-600" data-i18n="features.group.desc">
-                多选对象组合（Ctrl+G）和解组（Ctrl+Shift+G），整体移动和缩放。
-              </p>
-            </div>
-            <!-- 特性卡片 11: 对齐/分布 -->
-            <div
-              class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
-            >
-              <div
-                class="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-primary mb-4"
-              >
-                <i class="fas fa-align-center text-xl"> </i>
-              </div>
-              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.align.title">
-                📐 对齐/分布
-              </h3>
-              <p class="text-gray-600" data-i18n="features.align.desc">
-                左/中/右对齐，水平/垂直分布，快速排列多个对象。
+              <p class="text-gray-600" data-i18n="features.framework.desc">
+                Web Component 标准，支持 Vue 2/3、React、Angular 和原生 HTML。
               </p>
             </div>
           </div>
@@ -616,7 +551,7 @@ export class AppModule { }
                   src="tool.png"
                   alt="Configurable Editor Preview"
                   class="h-auto rounded-lg shadow-lg"
-                  style="max-width: 55px;"
+                  style="max-width: 200px;"
                 />
               </div>
             </div>
@@ -878,25 +813,17 @@ export class AppModule { }
           'features.subtitle': '核心能力',
           'features.title': '✨ 功能特性一览',
           'features.drawing.title': '🎨 绘图工具集',
-          'features.drawing.desc': '支持画笔、矩形、圆形、线条、箭头、多边形、文本等基础图形绘制，满足多样化创作需求。',
-          'features.image.title': '🖼️ 图片导入与编辑',
-          'features.image.desc': '轻松导入图片到画布，并进行后续的编辑和操作。',
-          'features.zoom.title': '🔍 缩放与平移',
-          'features.zoom.desc': '使用鼠标滚轮以光标为中心缩放，支持流畅的拖拽平移画布。',
-          'features.export.title': '💾 灵活的导入导出',
-          'features.export.desc': '支持 JSON 格式保存/加载项目，PNG 格式导出图像，以及一键清空画布。',
-          'features.zerodep.title': '⚡ 零依赖与轻量',
-          'features.zerodep.desc': '纯 JavaScript 实现，gzip 后仅约 15KB，不引入任何框架负担。',
+          'features.drawing.desc': '画笔、矩形、圆形、线条、箭头、多边形、文本、图片导入，满足多样化创作需求。',
+          'features.edit.title': '✏️ 高级编辑',
+          'features.edit.desc': '撤销/重做、图层管理、组合/解组、对齐分布、缩放平移。',
+          'features.export.title': '💾 导入导出',
+          'features.export.desc': 'JSON 保存/加载项目，PNG 导出图像，一键清空画布。',
           'features.hotzone.title': '🔥 热区功能',
           'features.hotzone.desc': '给文本绑定动态变量，实现模板化设计，动态替换文本内容。',
-          'features.undo.title': '↩️ 撤销/重做',
-          'features.undo.desc': '完整的历史记录支持，支持 Ctrl+Z 撤销和 Ctrl+Y 重做操作。',
-          'features.layers.title': '📚 图层管理',
-          'features.layers.desc': '图层上移/下移/置顶/置底，可见性和锁定控制。',
-          'features.group.title': '🔗 组合/解组',
-          'features.group.desc': '多选对象组合（Ctrl+G）和解组（Ctrl+Shift+G），整体移动和缩放。',
-          'features.align.title': '📐 对齐/分布',
-          'features.align.desc': '左/中/右对齐，水平/垂直分布，快速排列多个对象。',
+          'features.zerodep.title': '⚡ 零依赖轻量',
+          'features.zerodep.desc': '纯 JavaScript 实现，gzip 后仅约 20KB，无框架负担。',
+          'features.framework.title': '🔌 跨框架兼容',
+          'features.framework.desc': 'Web Component 标准，支持 Vue 2/3、React、Angular 和原生 HTML。',
           'install.subtitle': '快速上手',
           'install.title': '📦 安装与集成',
           'install.npm': '<i class="fab fa-npm mr-3 text-red-500"></i> NPM 安装',
@@ -1004,25 +931,17 @@ export class AppModule { }
           'features.subtitle': 'Core Capabilities',
           'features.title': '✨ Feature Overview',
           'features.drawing.title': '🎨 Drawing Tools',
-          'features.drawing.desc': 'Pencil, rectangles, circles, lines, arrows, polygons, text and more for diverse creative needs.',
-          'features.image.title': '🖼️ Image Import & Edit',
-          'features.image.desc': 'Easily import images to canvas and perform subsequent editing.',
-          'features.zoom.title': '🔍 Zoom & Pan',
-          'features.zoom.desc': 'Mouse wheel zoom centered on cursor, smooth canvas panning.',
-          'features.export.title': '💾 Flexible Import/Export',
+          'features.drawing.desc': 'Pencil, rectangles, circles, lines, arrows, polygons, text, image import for diverse creative needs.',
+          'features.edit.title': '✏️ Advanced Editing',
+          'features.edit.desc': 'Undo/redo, layer management, group/ungroup, align/distribute, zoom/pan.',
+          'features.export.title': '💾 Import/Export',
           'features.export.desc': 'Save/load JSON projects, export PNG images, clear canvas with one click.',
-          'features.zerodep.title': '⚡ Zero Dependencies & Lightweight',
-          'features.zerodep.desc': 'Pure JavaScript, only ~15KB gzipped, no framework overhead.',
           'features.hotzone.title': '🔥 Hotzone Feature',
           'features.hotzone.desc': 'Bind dynamic variables to text for template-based dynamic content replacement.',
-          'features.undo.title': '↩️ Undo/Redo',
-          'features.undo.desc': 'Full history support with Ctrl+Z undo and Ctrl+Y redo operations.',
-          'features.layers.title': '📚 Layer Management',
-          'features.layers.desc': 'Move layers up/down/top/bottom, visibility and lock control.',
-          'features.group.title': '🔗 Group/Ungroup',
-          'features.group.desc': 'Multi-select and group objects (Ctrl+G) and ungroup (Ctrl+Shift+G).',
-          'features.align.title': '📐 Align/Distribute',
-          'features.align.desc': 'Left/center/right alignment, horizontal/vertical distribution.',
+          'features.zerodep.title': '⚡ Zero Dependencies',
+          'features.zerodep.desc': 'Pure JavaScript, only ~20KB gzipped, no framework overhead.',
+          'features.framework.title': '🔌 Cross-Framework',
+          'features.framework.desc': 'Web Component standard, supports Vue 2/3, React, Angular and vanilla HTML.',
           'install.subtitle': 'Quick Start',
           'install.title': '📦 Installation & Integration',
           'install.npm': '<i class="fab fa-npm mr-3 text-red-500"></i> NPM Install',
