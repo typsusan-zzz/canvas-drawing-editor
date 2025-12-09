@@ -21,7 +21,7 @@
 ### ✨ 功能特性
 
 - 🎨 **绑图工具** - 画笔、矩形、圆形、线条、箭头、多边形、文本
-- 🖼️ **图片支持** - 导入和编辑图片
+- 🖼️ **图片支持** - 导入和编辑图片，支持亮度/对比度/模糊等滤镜
 - 🔍 **缩放平移** - 鼠标滚轮以光标为中心缩放，拖拽平移画布
 - ↩️ **撤销/重做** - 完整的历史记录支持（Ctrl+Z / Ctrl+Y）
 - 📚 **图层管理** - 图层上移/下移/置顶/置底，可见性和锁定控制
@@ -31,7 +31,14 @@
 - 💾 **导入导出** - JSON 格式保存/加载项目，PNG 格式导出
 - ⚡ **零依赖** - 纯 JavaScript 实现，无需 React/Vue
 - 🎛️ **可配置** - 通过 tool 配置对象显示/隐藏任意工具
-- 📦 **轻量级** - gzip 后约 15KB
+- 📦 **轻量级** - gzip 后约 33KB
+- 🔄 **旋转控制** - 对象旋转手柄，支持自由旋转
+- ⚖️ **等比缩放** - Shift + 拖拽角点保持宽高比
+- ⭐ **更多形状** - 星形、心形、三角形、菱形、贝塞尔曲线
+- ✏️ **线条样式** - 实线/虚线/点线样式，单向/双向箭头
+- 🖋️ **富文本** - 支持部分加粗、部分改色、部分斜体
+- 🎬 **Tween 动画** - 对象属性过渡动画（位置、大小、透明度等）
+- 📱 **移动端支持** - 单指拖拽、双指缩放/旋转、长按选择、响应式布局
 
 ### 📦 安装
 
@@ -246,7 +253,9 @@ document.addEventListener('editor-change', (e) => {
 | 属性 | 类型 | 说明 |
 |------|------|------|
 | `id` | string | 唯一标识符 |
-| `type` | string | 对象类型：`RECTANGLE`、`CIRCLE`、`PATH`、`TEXT`、`IMAGE`、`LINE`、`ARROW`、`POLYGON`、`GROUP` |
+| `type` | string | 对象类型：`RECTANGLE`、`CIRCLE`、`PATH`、`TEXT`、`RICH_TEXT`、`IMAGE`、`LINE`、`ARROW`、`POLYGON`、`TRIANGLE`、`STAR`、`HEART`、`DIAMOND`、`BEZIER`、`GROUP` |
+| `rotation` | number | 旋转角度（弧度，可选，默认 0） |
+| `opacity` | number | 透明度（0-1，可选，默认 1） |
 | `x` | number | X 坐标 |
 | `y` | number | Y 坐标 |
 | `color` | string | 描边/填充颜色（十六进制格式，如 `#3b82f6`） |
@@ -312,6 +321,31 @@ document.addEventListener('editor-change', (e) => {
 | `height` | number | 组合高度 |
 | `children` | Array | 子对象数组 |
 
+**富文本** (`type: "RICH_TEXT"`)：
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| `segments` | Array | 文本段落数组，每段包含 `text`, `color`, `bold`, `italic`, `fontSize` |
+| `fontSize` | number | 默认字体大小（像素） |
+
+**星形** (`type: "STAR"`)：
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| `outerRadius` | number | 外圆半径 |
+| `innerRadius` | number | 内圆半径 |
+| `points` | number | 星形角数（默认 5） |
+
+**心形** (`type: "HEART"`)、**三角形** (`type: "TRIANGLE"`)、**菱形** (`type: "DIAMOND"`)：
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| `width` | number | 宽度 |
+| `height` | number | 高度 |
+
+**贝塞尔曲线** (`type: "BEZIER"`)：
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| `points` | Array | 控制点数组（包含锚点和控制柄） |
+| `closed` | boolean | 是否闭合路径 |
+
 #### 示例：保存和加载画布
 
 ```javascript
@@ -333,6 +367,39 @@ if (savedData) {
 ```javascript
 document.addEventListener('editor-close', () => {
   console.log('编辑器已关闭');
+});
+```
+
+#### `animation-start` 事件
+
+当动画开始时触发。
+
+```javascript
+document.addEventListener('animation-start', (e) => {
+  console.log('动画开始:', e.detail);
+  // e.detail: { tweenId, objectId }
+});
+```
+
+#### `animation-complete` 事件
+
+当动画完成时触发。
+
+```javascript
+document.addEventListener('animation-complete', (e) => {
+  console.log('动画完成:', e.detail);
+  // e.detail: { tweenId, objectId }
+});
+```
+
+#### `animation-update` 事件
+
+动画每帧更新时触发。
+
+```javascript
+document.addEventListener('animation-update', (e) => {
+  console.log('动画进度:', e.detail.progress);
+  // e.detail: { tweenId, objectId, progress }
 });
 ```
 
@@ -387,6 +454,37 @@ document.addEventListener('editor-close', () => {
 }
 ```
 
+### 🎬 Tween 动画 API
+
+通过 `tweenAnimate()` 方法可以为对象创建平滑的属性过渡动画：
+
+```javascript
+const editor = document.querySelector('canvas-drawing-editor');
+
+// 基本用法
+editor.tweenAnimate(objectId, { x: 300, y: 200 }, {
+  duration: 1000,        // 动画时长（毫秒）
+  easing: 'easeOutQuad', // 缓动函数
+  onComplete: () => console.log('动画完成')
+});
+
+// 可动画属性：x, y, width, height, rotation, opacity, fontSize, radius
+
+// 缓动函数：linear, easeInQuad, easeOutQuad, easeInOutQuad,
+//          easeInElastic, easeOutElastic, easeInBounce, easeOutBounce,
+//          easeInBack, easeOutBack
+
+// 循环动画
+editor.tweenAnimate(objectId, { x: 400 }, {
+  duration: 1000,
+  repeat: -1,    // 无限循环
+  yoyo: true     // 往返
+});
+
+// 停止动画
+editor.stopAllAnimations();
+```
+
 ### 🛠️ 开发
 
 ```bash
@@ -410,7 +508,7 @@ A powerful canvas-based drawing editor Web Component with **zero dependencies**.
 ### ✨ Features
 
 - 🎨 **Drawing Tools** - Pencil, Rectangle, Circle, Line, Arrow, Polygon, Text
-- 🖼️ **Image Support** - Import and manipulate images
+- 🖼️ **Image Support** - Import and manipulate images with brightness/contrast/blur filters
 - 🔍 **Zoom & Pan** - Mouse wheel zoom centered on cursor, drag to pan
 - ↩️ **Undo/Redo** - Full history support (Ctrl+Z / Ctrl+Y)
 - 📚 **Layer Management** - Move up/down/top/bottom, visibility and lock control
@@ -420,7 +518,14 @@ A powerful canvas-based drawing editor Web Component with **zero dependencies**.
 - 💾 **Import/Export** - Save and load projects as JSON, export as PNG
 - ⚡ **Zero Dependencies** - Pure JavaScript, no React/Vue required
 - 🎛️ **Configurable** - Show/hide any tool via tool config object
-- 📦 **Lightweight** - ~15KB gzipped
+- 📦 **Lightweight** - ~33KB gzipped
+- 🔄 **Rotation Control** - Object rotation handle for free rotation
+- ⚖️ **Proportional Scaling** - Shift + drag corner to maintain aspect ratio
+- ⭐ **More Shapes** - Star, Heart, Triangle, Diamond, Bezier curves
+- ✏️ **Line Styles** - Solid/dashed/dotted styles, single/double arrows
+- 🖋️ **Rich Text** - Support partial bold, partial color, partial italic
+- 🎬 **Tween Animation** - Object property transition animations (position, size, opacity, etc.)
+- 📱 **Mobile Support** - Single finger drag, two-finger zoom/rotate, long press selection, responsive layout
 
 ### 📦 Installation
 
@@ -725,6 +830,39 @@ document.addEventListener('editor-close', () => {
 });
 ```
 
+#### `animation-start` Event
+
+Triggered when an animation starts.
+
+```javascript
+document.addEventListener('animation-start', (e) => {
+  console.log('Animation started:', e.detail);
+  // e.detail: { tweenId, objectId }
+});
+```
+
+#### `animation-complete` Event
+
+Triggered when an animation completes.
+
+```javascript
+document.addEventListener('animation-complete', (e) => {
+  console.log('Animation completed:', e.detail);
+  // e.detail: { tweenId, objectId }
+});
+```
+
+#### `animation-update` Event
+
+Triggered on each animation frame update.
+
+```javascript
+document.addEventListener('animation-update', (e) => {
+  console.log('Animation progress:', e.detail.progress);
+  // e.detail: { tweenId, objectId, progress }
+});
+```
+
 ### 🔥 Hotzone Feature
 
 The hotzone feature allows you to bind dynamic variables to text objects for template-based dynamic text replacement.
@@ -774,6 +912,37 @@ Steps:
     "description": "User name"    // Description (optional)
   }
 }
+```
+
+### 🎬 Tween Animation API
+
+Use `tweenAnimate()` method to create smooth property transition animations:
+
+```javascript
+const editor = document.querySelector('canvas-drawing-editor');
+
+// Basic usage
+editor.tweenAnimate(objectId, { x: 300, y: 200 }, {
+  duration: 1000,        // Animation duration (ms)
+  easing: 'easeOutQuad', // Easing function
+  onComplete: () => console.log('Animation complete')
+});
+
+// Animatable properties: x, y, width, height, rotation, opacity, fontSize, radius
+
+// Easing functions: linear, easeInQuad, easeOutQuad, easeInOutQuad,
+//                   easeInElastic, easeOutElastic, easeInBounce, easeOutBounce,
+//                   easeInBack, easeOutBack
+
+// Loop animation
+editor.tweenAnimate(objectId, { x: 400 }, {
+  duration: 1000,
+  repeat: -1,    // Infinite loop
+  yoyo: true     // Reverse on repeat
+});
+
+// Stop animations
+editor.stopAllAnimations();
 ```
 
 ### 🛠️ Development

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Canvas Drawing Editor - 原生 HTML 示例 (热区功能)</title>
+  <title>Canvas Drawing Editor - 原生 HTML 示例</title>
   <style>
     * {
       margin: 0;
@@ -21,20 +21,24 @@
   </style>
 </head>
 <body>
-  <!-- 使用 Web Component - 启用热区功能 -->
+  <!-- 使用 Web Component -->
   <canvas-drawing-editor
     title="我的画布"
-    show-minimap="true"
-    show-zoom="true"
+    lang="zh"
+    theme-color="#5450dc"
   ></canvas-drawing-editor>
 
-  <!-- 引入 Web Component (无需 React) -->
+  <!-- 引入 Web Component -->
   <script src="../../dist/canvas-drawing-editor.umd.js"></script>
 
   <script>
     // 监听编辑器事件
     document.addEventListener('editor-change', (e) => {
       console.log('画布内容变化:', e.detail.objects);
+    });
+
+    document.addEventListener('editor-close', () => {
+      console.log('编辑器已关闭');
     });
   </script>
 </body>

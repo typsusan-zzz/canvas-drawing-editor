@@ -13,7 +13,15 @@ export {
   type CircleObject,
   type PathObject,
   type TextObject,
+  type RichTextSegment,
+  type RichTextObject,
   type ImageObject,
   type CanvasObject,
-  type EditorConfig
+  type EditorConfig,
+  // Tween动画相关导出
+  Easing,
+  type EasingFunction,
+  type TweenConfig,
+  type TweenProps,
+  type TweenInstance
 } from './core/CanvasDrawingEditor';

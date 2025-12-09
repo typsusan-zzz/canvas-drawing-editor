@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tween 动画示例 - Canvas Drawing Editor</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+    }
+    .container {
+      display: flex;
+      height: 100vh;
+    }
+    .editor-wrapper {
+      flex: 1;
+      height: 100%;
+    }
+    canvas-drawing-editor {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .controls {
+      width: 320px;
+      background: #fff;
+      border-left: 1px solid #e0e0e0;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .controls h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: #333;
+    }
+    .controls h3 {
+      font-size: 14px;
+      margin: 20px 0 12px;
+      color: #666;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 8px;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .btn-primary { background: #3b82f6; color: #fff; }
+    .btn-success { background: #10b981; color: #fff; }
+    .btn-warning { background: #f59e0b; color: #fff; }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-purple { background: #8b5cf6; color: #fff; }
+    .btn-pink { background: #ec4899; color: #fff; }
+    .btn-outline { background: #fff; color: #333; border: 1px solid #ddd; }
+    .info {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #0369a1;
+    }
+    .log {
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 16px;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 12px;
+      color: #94a3b8;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .log-entry { margin-bottom: 4px; }
+    .log-entry.start { color: #22c55e; }
+    .log-entry.update { color: #f59e0b; }
+    .log-entry.complete { color: #3b82f6; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="editor-wrapper">
+      <canvas-drawing-editor id="editor" title="Tween动画演示"></canvas-drawing-editor>
+    </div>
+    <div class="controls">
+      <h2>🎬 Tween 动画示例</h2>
+      <div class="info">
+        先在画布上绘制一些图形（矩形、圆形等），然后选中一个对象，点击下方按钮体验动画效果。
+      </div>
+
+      <h3>📍 位移动画</h3>
+      <button class="btn btn-primary" onclick="animateMove()">移动到右边 →</button>
+      <button class="btn btn-primary" onclick="animateMoveBack()">移动到左边 ←</button>
+
+      <h3>📐 缩放动画</h3>
+      <button class="btn btn-success" onclick="animateScale()">放大 2 倍</button>
+      <button class="btn btn-success" onclick="animateScaleDown()">缩小到一半</button>
+
+      <h3>🔄 旋转动画</h3>
+      <button class="btn btn-warning" onclick="animateRotate()">旋转 360°</button>
+      <button class="btn btn-warning" onclick="animateRotate45()">旋转 45°</button>
+
+      <h3>✨ 透明度动画</h3>
+      <button class="btn btn-purple" onclick="animateFadeOut()">淡出 (透明度→0.2)</button>
+      <button class="btn btn-purple" onclick="animateFadeIn()">淡入 (透明度→1)</button>
+
+      <h3>🎪 组合动画</h3>
+      <button class="btn btn-pink" onclick="animateCombo()">移动+旋转+缩放</button>
+      <button class="btn btn-pink" onclick="animateBounce()">弹性效果</button>
+
+      <h3>🔁 循环动画</h3>
+      <button class="btn btn-danger" onclick="animateLoop()">无限往返</button>
+      <button class="btn btn-outline" onclick="stopAllAnimations()">⏹ 停止所有动画</button>
+
+      <h3>📋 动画日志</h3>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <script src="../../dist/canvas-drawing-editor.umd.js"></script>
+  <script>
+    const editor = document.getElementById('editor');
+    const logEl = document.getElementById('log');
+
+    function log(msg, type = '') {
+      const entry = document.createElement('div');
+      entry.className = 'log-entry ' + type;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.insertBefore(entry, logEl.firstChild);
+      if (logEl.children.length > 50) logEl.removeChild(logEl.lastChild);
+    }
+
+    function getSelectedId() {
+      const selected = editor.getSelectedObject?.() || editor.selectedId;
+      if (!selected) {
+        alert('请先选中一个对象！');
+        return null;
+      }
+      return typeof selected === 'object' ? selected.id : selected;
+    }
+
+    // ========== 位移动画 ==========
+    function animateMove() {
+      const id = getSelectedId();
+      if (!id) return;
+      const obj = editor.objects.find(o => o.id === id);
+      editor.tweenAnimate(id, { x: obj.x + 150 }, {
+        duration: 800,
+        easing: 'easeOutQuad',
+        onStart: () => log('移动动画开始', 'start'),
+        onComplete: () => log('移动动画完成', 'complete')
+      });
+    }
+
+    function animateMoveBack() {
+      const id = getSelectedId();
+      if (!id) return;
+      const obj = editor.objects.find(o => o.id === id);
+      editor.tweenAnimate(id, { x: obj.x - 150 }, {
+        duration: 800,
+        easing: 'easeOutQuad',
+        onComplete: () => log('向左移动完成', 'complete')
+      });
+    }
+
+    // ========== 缩放动画 ==========
+    function animateScale() {
+      const id = getSelectedId();
+      if (!id) return;
+      const obj = editor.objects.find(o => o.id === id);
+      const props = {};
+      if (obj.width) props.width = obj.width * 2;
+      if (obj.height) props.height = obj.height * 2;
+      if (obj.radius) props.radius = obj.radius * 2;
+      editor.tweenAnimate(id, props, {
+        duration: 600,
+        easing: 'easeOutBack',
+        onStart: () => log('放大动画开始', 'start'),
+        onComplete: () => log('放大动画完成', 'complete')
+      });
+    }
+
+    function animateScaleDown() {
+      const id = getSelectedId();
+      if (!id) return;
+      const obj = editor.objects.find(o => o.id === id);
+      const props = {};
+      if (obj.width) props.width = obj.width / 2;
+      if (obj.height) props.height = obj.height / 2;
+      if (obj.radius) props.radius = obj.radius / 2;
+      editor.tweenAnimate(id, props, {
+        duration: 600,
+        easing: 'easeOutQuad',
+        onComplete: () => log('缩小动画完成', 'complete')
+      });
+    }
+
+    // ========== 旋转动画 ==========
+    function animateRotate() {
+      const id = getSelectedId();
+      if (!id) return;
+      const obj = editor.objects.find(o => o.id === id);
+      editor.tweenAnimate(id, { rotation: (obj.rotation || 0) + Math.PI * 2 }, {
+        duration: 1000,
+        easing: 'easeInOutQuad',
+        onStart: () => log('旋转360°开始', 'start'),
+        onComplete: () => log('旋转360°完成', 'complete')
+      });
+    }
+
+    function animateRotate45() {
+      const id = getSelectedId();
+      if (!id) return;
+      const obj = editor.objects.find(o => o.id === id);
+      editor.tweenAnimate(id, { rotation: (obj.rotation || 0) + Math.PI / 4 }, {
+        duration: 500,
+        easing: 'easeOutQuad',
+        onComplete: () => log('旋转45°完成', 'complete')
+      });
+    }
+
+    // ========== 透明度动画 ==========
+    function animateFadeOut() {
+      const id = getSelectedId();
+      if (!id) return;
+      editor.tweenAnimate(id, { opacity: 0.2 }, {
+        duration: 500,
+        easing: 'linear',
+        onStart: () => log('淡出动画开始', 'start'),
+        onComplete: () => log('淡出动画完成', 'complete')
+      });
+    }
+
+    function animateFadeIn() {
+      const id = getSelectedId();
+      if (!id) return;
+      editor.tweenAnimate(id, { opacity: 1 }, {
+        duration: 500,
+        easing: 'linear',
+        onComplete: () => log('淡入动画完成', 'complete')
+      });
+    }
+
+    // ========== 组合动画 ==========
+    function animateCombo() {
+      const id = getSelectedId();
+      if (!id) return;
+      const obj = editor.objects.find(o => o.id === id);
+      const props = {
+        x: obj.x + 100,
+        y: obj.y - 50,
+        rotation: (obj.rotation || 0) + Math.PI / 2
+      };
+      if (obj.width) props.width = obj.width * 1.5;
+      if (obj.height) props.height = obj.height * 1.5;
+      if (obj.radius) props.radius = obj.radius * 1.5;
+
+      editor.tweenAnimate(id, props, {
+        duration: 1200,
+        easing: 'easeInOutQuad',
+        onStart: () => log('组合动画开始', 'start'),
+        onUpdate: (p) => { if (Math.floor(p * 10) % 3 === 0) log(`进度: ${(p*100).toFixed(0)}%`, 'update'); },
+        onComplete: () => log('组合动画完成', 'complete')
+      });
+    }
+
+    function animateBounce() {
+      const id = getSelectedId();
+      if (!id) return;
+      const obj = editor.objects.find(o => o.id === id);
+      editor.tweenAnimate(id, { y: obj.y - 100 }, {
+        duration: 800,
+        easing: 'easeOutElastic',
+        onStart: () => log('弹性动画开始', 'start'),
+        onComplete: () => log('弹性动画完成', 'complete')
+      });
+    }
+
+    // ========== 循环动画 ==========
+    function animateLoop() {
+      const id = getSelectedId();
+      if (!id) return;
+      const obj = editor.objects.find(o => o.id === id);
+      editor.tweenAnimate(id, { x: obj.x + 100 }, {
+        duration: 1000,
+        easing: 'easeInOutQuad',
+        repeat: -1,
+        yoyo: true,
+        onStart: () => log('无限循环动画开始 (点击停止按钮结束)', 'start')
+      });
+    }
+
+    function stopAllAnimations() {
+      editor.stopAllAnimations();
+      log('所有动画已停止', 'complete');
+    }
+
+    // 初始提示
+    log('欢迎！请先绘制图形，然后选中它体验动画效果');
+  </script>
+</body>
+</html>
+

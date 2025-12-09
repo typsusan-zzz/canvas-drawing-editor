@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canvas Drawing Editor - 在线演示</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- CDN 引入编辑器 -->
+  <script src="https://unpkg.com/canvas-drawing-editor@latest/dist/canvas-drawing-editor.umd.js"></script>
+  <style>
+    .editor-container {
+      width: 100%;
+      height: calc(100vh - 140px);
+      min-height: 500px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .config-panel {
+      height: calc(100vh - 140px);
+      min-height: 500px;
+      overflow-y: auto;
+    }
+    .config-section {
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 16px;
+      margin-bottom: 16px;
+    }
+    .config-section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: #e5e7eb;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .toggle-switch.active {
+      background: #5450dc;
+    }
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .toggle-switch.active::after {
+      transform: translateX(20px);
+    }
+    .config-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    .config-input:focus {
+      outline: none;
+      border-color: #5450dc;
+    }
+    .color-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .color-preview {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 2px solid #e5e7eb;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <!-- 导航栏 -->
+  <nav class="bg-white shadow-sm border-b border-gray-100">
+    <div class="max-w-full mx-auto px-4 py-4 flex items-center justify-between">
+      <a href="index.html" class="flex items-center space-x-2 text-gray-800 hover:text-indigo-600">
+        <i class="fas fa-arrow-left"></i>
+        <span>返回文档</span>
+      </a>
+      <h1 class="text-xl font-bold text-gray-800">
+        <i class="fas fa-palette text-indigo-600 mr-2"></i>
+        Canvas Drawing Editor 在线演示
+      </h1>
+      <div class="w-24"></div>
+    </div>
+  </nav>
+
+  <main class="px-4 py-4">
+    <div class="flex gap-4">
+      <!-- 左侧：画布区域 (2/3) -->
+      <div class="w-2/3">
+        <div class="bg-white rounded-xl shadow-lg p-4">
+          <div class="editor-container">
+            <canvas-drawing-editor
+              id="editor"
+              title="在线画布编辑器"
+              lang="zh"
+              theme-color="#5450dc"
+              enable-hotzone="true"
+            ></canvas-drawing-editor>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧：配置面板 (1/3) -->
+      <div class="w-1/3">
+        <div class="bg-white rounded-xl shadow-lg p-4 config-panel">
+          <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+            <i class="fas fa-cog text-indigo-500 mr-2"></i>
+            实时配置
+          </h2>
+
+          <!-- 基础属性 -->
+          <div class="config-section">
+            <h3 class="font-semibold text-gray-700 mb-3 text-sm">
+              <i class="fas fa-sliders-h text-blue-500 mr-2"></i>基础属性
+            </h3>
+
+            <div class="space-y-3">
+              <!-- 标题 -->
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">title (标题)</label>
+                <input type="text" id="config-title" value="在线画布编辑器" class="config-input" onchange="updateConfig()">
+              </div>
+
+              <!-- 语言 -->
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">lang (语言)</label>
+                <select id="config-lang" class="config-input" onchange="updateConfig()">
+                  <option value="zh">zh (中文)</option>
+                  <option value="en">en (English)</option>
+                </select>
+              </div>
+
+              <!-- 主题色 -->
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">theme-color (主题色)</label>
+                <div class="color-input-wrapper">
+                  <input type="color" id="config-theme-color" value="#5450dc" class="color-preview" onchange="updateConfig()">
+                  <input type="text" id="config-theme-color-text" value="#5450dc" class="config-input flex-1" onchange="syncThemeColor()">
+                </div>
+              </div>
+
+              <!-- 热区功能 -->
+              <div class="flex items-center justify-between">
+                <label class="text-xs text-gray-500">enable-hotzone (热区功能)</label>
+                <div id="config-hotzone" class="toggle-switch active" onclick="toggleSwitch(this, 'hotzone')"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 工具配置 -->
+          <div class="config-section">
+            <h3 class="font-semibold text-gray-700 mb-3 text-sm">
+              <i class="fas fa-tools text-green-500 mr-2"></i>工具配置 (tool-config)
+            </h3>
+
+            <div class="grid grid-cols-2 gap-2">
+              <!-- 绘图工具 -->
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-pencil-alt mr-1"></i>画笔</span>
+                <div id="tool-pencil" class="toggle-switch active" onclick="toggleTool(this, 'pencil')"></div>
+              </div>
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-square mr-1"></i>矩形</span>
+                <div id="tool-rectangle" class="toggle-switch active" onclick="toggleTool(this, 'rectangle')"></div>
+              </div>
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-circle mr-1"></i>圆形</span>
+                <div id="tool-circle" class="toggle-switch active" onclick="toggleTool(this, 'circle')"></div>
+              </div>
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-minus mr-1"></i>直线</span>
+                <div id="tool-line" class="toggle-switch active" onclick="toggleTool(this, 'line')"></div>
+              </div>
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-arrow-right mr-1"></i>箭头</span>
+                <div id="tool-arrow" class="toggle-switch active" onclick="toggleTool(this, 'arrow')"></div>
+              </div>
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-draw-polygon mr-1"></i>多边形</span>
+                <div id="tool-polygon" class="toggle-switch active" onclick="toggleTool(this, 'polygon')"></div>
+              </div>
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-font mr-1"></i>文本</span>
+                <div id="tool-text" class="toggle-switch active" onclick="toggleTool(this, 'text')"></div>
+              </div>
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-image mr-1"></i>图片</span>
+                <div id="tool-image" class="toggle-switch active" onclick="toggleTool(this, 'image')"></div>
+              </div>
+
+              <!-- 操作工具 -->
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-undo mr-1"></i>撤销</span>
+                <div id="tool-undo" class="toggle-switch active" onclick="toggleTool(this, 'undo')"></div>
+              </div>
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-redo mr-1"></i>重做</span>
+                <div id="tool-redo" class="toggle-switch active" onclick="toggleTool(this, 'redo')"></div>
+              </div>
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-search mr-1"></i>缩放</span>
+                <div id="tool-zoom" class="toggle-switch active" onclick="toggleTool(this, 'zoom')"></div>
+              </div>
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-palette mr-1"></i>颜色</span>
+                <div id="tool-color" class="toggle-switch active" onclick="toggleTool(this, 'color')"></div>
+              </div>
+
+              <!-- 导出工具 -->
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-download mr-1"></i>下载图片</span>
+                <div id="tool-download" class="toggle-switch active" onclick="toggleTool(this, 'download')"></div>
+              </div>
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-save mr-1"></i>导出JSON</span>
+                <div id="tool-exportJson" class="toggle-switch active" onclick="toggleTool(this, 'exportJson')"></div>
+              </div>
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-upload mr-1"></i>导入JSON</span>
+                <div id="tool-importJson" class="toggle-switch active" onclick="toggleTool(this, 'importJson')"></div>
+              </div>
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-trash mr-1"></i>清空</span>
+                <div id="tool-clear" class="toggle-switch active" onclick="toggleTool(this, 'clear')"></div>
+              </div>
+
+              <!-- 高级工具 -->
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-layer-group mr-1"></i>图层</span>
+                <div id="tool-layers" class="toggle-switch active" onclick="toggleTool(this, 'layers')"></div>
+              </div>
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-object-group mr-1"></i>组合</span>
+                <div id="tool-group" class="toggle-switch active" onclick="toggleTool(this, 'group')"></div>
+              </div>
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-align-left mr-1"></i>对齐</span>
+                <div id="tool-align" class="toggle-switch active" onclick="toggleTool(this, 'align')"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 快捷操作 -->
+          <div class="config-section">
+            <h3 class="font-semibold text-gray-700 mb-3 text-sm">
+              <i class="fas fa-bolt text-yellow-500 mr-2"></i>快捷操作
+            </h3>
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="addRectangle()" class="p-2 bg-blue-500 text-white rounded text-xs hover:bg-blue-600">
+                <i class="fas fa-plus mr-1"></i>矩形
+              </button>
+              <button onclick="addCircle()" class="p-2 bg-green-500 text-white rounded text-xs hover:bg-green-600">
+                <i class="fas fa-plus mr-1"></i>圆形
+              </button>
+              <button onclick="addStar()" class="p-2 bg-yellow-500 text-white rounded text-xs hover:bg-yellow-600">
+                <i class="fas fa-plus mr-1"></i>星形
+              </button>
+              <button onclick="addHeart()" class="p-2 bg-pink-500 text-white rounded text-xs hover:bg-pink-600">
+                <i class="fas fa-plus mr-1"></i>心形
+              </button>
+              <button onclick="clearCanvas()" class="p-2 bg-red-500 text-white rounded text-xs hover:bg-red-600">
+                <i class="fas fa-trash mr-1"></i>清空
+              </button>
+              <button onclick="exportJSON()" class="p-2 bg-emerald-500 text-white rounded text-xs hover:bg-emerald-600">
+                <i class="fas fa-download mr-1"></i>导出
+              </button>
+            </div>
+          </div>
+
+          <!-- 动画演示 -->
+          <div class="config-section">
+            <h3 class="font-semibold text-gray-700 mb-1 text-sm">
+              <i class="fas fa-film text-purple-500 mr-2"></i>Tween 动画
+            </h3>
+            <p class="text-xs text-gray-400 mb-3">* 默认对第一个图形生效</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="animateMove()" class="p-2 bg-purple-500 text-white rounded text-xs hover:bg-purple-600">
+                <i class="fas fa-arrows-alt mr-1"></i>位移
+              </button>
+              <button onclick="animateRotate()" class="p-2 bg-indigo-500 text-white rounded text-xs hover:bg-indigo-600">
+                <i class="fas fa-sync-alt mr-1"></i>旋转
+              </button>
+              <button onclick="animateScale()" class="p-2 bg-cyan-500 text-white rounded text-xs hover:bg-cyan-600">
+                <i class="fas fa-expand mr-1"></i>缩放
+              </button>
+              <button onclick="animateFade()" class="p-2 bg-orange-500 text-white rounded text-xs hover:bg-orange-600">
+                <i class="fas fa-adjust mr-1"></i>淡入淡出
+              </button>
+              <button onclick="stopAllAnimations()" class="col-span-2 p-2 bg-gray-500 text-white rounded text-xs hover:bg-gray-600">
+                <i class="fas fa-stop mr-1"></i>停止所有动画
+              </button>
+            </div>
+          </div>
+
+          <!-- 事件日志 -->
+          <div>
+            <h3 class="font-semibold text-gray-700 mb-3 text-sm">
+              <i class="fas fa-terminal text-gray-500 mr-2"></i>事件日志
+            </h3>
+            <div id="eventLog" class="h-32 overflow-y-auto bg-gray-900 rounded-lg p-3 text-xs font-mono text-green-400">
+              <div class="text-gray-500">// 事件日志将在这里显示...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const editor = document.getElementById('editor');
+    const eventLog = document.getElementById('eventLog');
+    let objectCounter = 0;
+
+    // 初始化数据（包含热区演示）
+    const initialData = {"version":"1.0","objects":[{"id":"wz2l1bxl0","type":"TEXT","x":360,"y":72.8,"text":"点击左侧工具栏，点击文本，输入文字，然后回车","fontSize":18,"color":"#000000","lineWidth":3},{"id":"6wake714g","type":"TEXT","x":264,"y":187,"text":"然后点击文字右键，建立变量，可实现热区功能，效果如下","fontSize":20,"color":"#000000","lineWidth":3},{"id":"alik5bh8k","type":"ARROW","x":551,"y":91,"x2":550,"y2":141,"color":"#000000","lineWidth":3,"lineStyle":"solid","arrowType":"single"},{"id":"kvaqjqu9e","type":"ARROW","x":549,"y":211,"x2":550,"y2":258,"color":"#000000","lineWidth":3,"lineStyle":"solid","arrowType":"single"},{"id":"wrtk46qxs","type":"TEXT","x":365,"y":306,"text":"xxxx","fontSize":24,"color":"#000000","lineWidth":3,"hotzone":{"variableName":"text1","description":"这是一个时间戳的实现"}},{"id":"xhhtl7bye","type":"RECTANGLE","x":573,"y":294,"width":0,"height":0,"color":"#000000","lineWidth":3,"lineStyle":"solid"},{"id":"5jvls3dyu","type":"RECTANGLE","x":543,"y":291,"width":0,"height":0,"color":"#000000","lineWidth":3,"lineStyle":"solid"},{"id":"0qbqfvl8d","type":"RECTANGLE","x":543,"y":291,"width":0,"height":0,"color":"#000000","lineWidth":3,"lineStyle":"solid"},{"id":"f7db60j4r","type":"RECTANGLE","x":570,"y":317,"width":0,"height":0,"color":"#000000","lineWidth":3,"lineStyle":"solid"}]};
+
+    // 获取当前时间问候语
+    function getGreeting() {
+      const hour = new Date().getHours();
+      if (hour >= 5 && hour < 12) return '早上好';
+      if (hour >= 12 && hour < 14) return '中午好';
+      if (hour >= 14 && hour < 18) return '下午好';
+      return '晚上好';
+    }
+
+    // 格式化当前时间
+    function formatDateTime() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      return `${year}年${month}月${day}日 ${hours}:${minutes}:${seconds}`;
+    }
+
+    // 更新热区数据
+    function updateHotzoneData() {
+      const greeting = getGreeting();
+      const dateTime = formatDateTime();
+      const hotzoneData = { text1: `${greeting}！${dateTime}` };
+      editor.setAttribute('hotzone-data', JSON.stringify(hotzoneData));
+    }
+
+    // 初始化编辑器
+    function initEditor() {
+      // 设置初始数据
+      editor.setAttribute('initial-data', JSON.stringify(initialData));
+      // 设置热区数据
+      updateHotzoneData();
+      // 每秒更新热区数据
+      setInterval(updateHotzoneData, 1000);
+    }
+
+    // 页面加载完成后初始化
+    setTimeout(initEditor, 100);
+
+    // 工具配置状态
+    const toolConfig = {
+      pencil: true, rectangle: true, circle: true, line: true,
+      arrow: true, polygon: true, text: true, image: true,
+      undo: true, redo: true, zoom: true, color: true,
+      download: true, exportJson: true, importJson: true, clear: true,
+      layers: true, group: true, align: true
+    };
+
+    // 日志函数
+    function log(message, type = 'info') {
+      const colors = { info: 'text-green-400', warn: 'text-yellow-400', error: 'text-red-400' };
+      const time = new Date().toLocaleTimeString();
+      eventLog.innerHTML += `<div class="${colors[type]}">[${time}] ${message}</div>`;
+      eventLog.scrollTop = eventLog.scrollHeight;
+    }
+
+    // 监听事件
+    document.addEventListener('editor-change', (e) => {
+      log(`画布变化: ${e.detail.objects.length} 个对象`);
+    });
+    document.addEventListener('animation-start', (e) => {
+      log(`动画开始: ${e.detail.tweenId}`);
+    });
+    document.addEventListener('animation-complete', (e) => {
+      log(`动画完成: ${e.detail.tweenId}`);
+    });
+
+    // 更新编辑器配置
+    function updateConfig() {
+      const title = document.getElementById('config-title').value;
+      const lang = document.getElementById('config-lang').value;
+      const themeColor = document.getElementById('config-theme-color').value;
+
+      editor.setAttribute('title', title);
+      editor.setAttribute('lang', lang);
+      editor.setAttribute('theme-color', themeColor);
+
+      log(`配置更新: title="${title}", lang="${lang}", theme-color="${themeColor}"`);
+    }
+
+    // 同步主题色输入
+    function syncThemeColor() {
+      const textValue = document.getElementById('config-theme-color-text').value;
+      if (/^#[0-9A-Fa-f]{6}$/.test(textValue)) {
+        document.getElementById('config-theme-color').value = textValue;
+        updateConfig();
+      }
+    }
+
+    // 切换开关状态
+    function toggleSwitch(el, type) {
+      el.classList.toggle('active');
+      const isActive = el.classList.contains('active');
+
+      if (type === 'hotzone') {
+        editor.setAttribute('enable-hotzone', isActive ? 'true' : 'false');
+        log(`热区功能: ${isActive ? '启用' : '禁用'}`);
+      }
+    }
+
+    // 切换工具
+    function toggleTool(el, toolName) {
+      el.classList.toggle('active');
+      toolConfig[toolName] = el.classList.contains('active');
+
+      // 更新编辑器的 tool-config 属性
+      editor.setAttribute('tool-config', JSON.stringify(toolConfig));
+      log(`工具 ${toolName}: ${toolConfig[toolName] ? '显示' : '隐藏'}`);
+    }
+
+    // 颜色选择器变化时同步文本
+    document.getElementById('config-theme-color').addEventListener('input', function() {
+      document.getElementById('config-theme-color-text').value = this.value;
+      updateConfig();
+    });
+
+    // 生成随机颜色
+    function randomColor() {
+      const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+      return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    // 生成随机位置
+    function randomPos() {
+      return { x: 100 + Math.random() * 400, y: 100 + Math.random() * 300 };
+    }
+
+    // 添加矩形
+    function addRectangle() {
+      const pos = randomPos();
+      const data = editor.exportJSON();
+      data.objects.push({
+        id: 'rect-' + (++objectCounter),
+        type: 'RECTANGLE',
+        x: pos.x, y: pos.y,
+        width: 100, height: 80,
+        color: randomColor(),
+        lineWidth: 2
+      });
+      editor.setAttribute('initial-data', JSON.stringify(data));
+      log('添加矩形');
+    }
+
+    // 添加圆形
+    function addCircle() {
+      const pos = randomPos();
+      const data = editor.exportJSON();
+      data.objects.push({
+        id: 'circle-' + (++objectCounter),
+        type: 'CIRCLE',
+        x: pos.x, y: pos.y,
+        radius: 50,
+        color: randomColor(),
+        lineWidth: 2
+      });
+      editor.setAttribute('initial-data', JSON.stringify(data));
+      log('添加圆形');
+    }
+
+    // 添加星形
+    function addStar() {
+      const pos = randomPos();
+      const data = editor.exportJSON();
+      data.objects.push({
+        id: 'star-' + (++objectCounter),
+        type: 'STAR',
+        x: pos.x, y: pos.y,
+        outerRadius: 50, innerRadius: 25,
+        points: 5,
+        color: randomColor(),
+        lineWidth: 2
+      });
+      editor.setAttribute('initial-data', JSON.stringify(data));
+      log('添加星形');
+    }
+
+    // 添加心形
+    function addHeart() {
+      const pos = randomPos();
+      const data = editor.exportJSON();
+      data.objects.push({
+        id: 'heart-' + (++objectCounter),
+        type: 'HEART',
+        x: pos.x, y: pos.y,
+        size: 50,
+        color: randomColor(),
+        lineWidth: 2
+      });
+      editor.setAttribute('initial-data', JSON.stringify(data));
+      log('添加心形');
+    }
+
+    // 获取第一个对象ID
+    function getFirstObjectId() {
+      const data = editor.exportJSON();
+      if (data.objects.length === 0) {
+        log('请先添加图形！', 'warn');
+        return null;
+      }
+      return data.objects[0].id;
+    }
+
+    // 位移动画
+    function animateMove() {
+      const id = getFirstObjectId();
+      if (!id) return;
+      const data = editor.exportJSON();
+      const obj = data.objects[0];
+      // 来回移动
+      const targetX = obj.x > 300 ? 150 : 450;
+      editor.tweenAnimate(id, { x: targetX, y: 200 }, {
+        duration: 1000,
+        easing: 'easeOutQuad'
+      });
+      log('位移动画');
+    }
+
+    // 旋转动画
+    function animateRotate() {
+      const id = getFirstObjectId();
+      if (!id) return;
+      const data = editor.exportJSON();
+      const obj = data.objects[0];
+      const currentRotation = obj.rotation || 0;
+      editor.tweenAnimate(id, { rotation: currentRotation + Math.PI * 2 }, {
+        duration: 1500,
+        easing: 'easeInOutQuad'
+      });
+      log('旋转动画 (360°)');
+    }
+
+    // 缩放动画
+    function animateScale() {
+      const id = getFirstObjectId();
+      if (!id) return;
+      const data = editor.exportJSON();
+      const obj = data.objects[0];
+
+      // 先放大再恢复
+      if (obj.width !== undefined && obj.height !== undefined) {
+        const origW = obj.width, origH = obj.height;
+        editor.tweenAnimate(id, { width: origW * 1.5, height: origH * 1.5 }, {
+          duration: 500,
+          easing: 'easeOutQuad',
+          onComplete: () => {
+            editor.tweenAnimate(id, { width: origW, height: origH }, {
+              duration: 500,
+              easing: 'easeInQuad'
+            });
+          }
+        });
+        log('缩放动画 (放大→恢复)');
+      } else if (obj.radius !== undefined) {
+        const origR = obj.radius;
+        editor.tweenAnimate(id, { radius: origR * 1.5 }, {
+          duration: 500,
+          easing: 'easeOutQuad',
+          onComplete: () => {
+            editor.tweenAnimate(id, { radius: origR }, {
+              duration: 500,
+              easing: 'easeInQuad'
+            });
+          }
+        });
+        log('缩放动画 (放大→恢复)');
+      } else if (obj.fontSize !== undefined) {
+        const origF = obj.fontSize;
+        editor.tweenAnimate(id, { fontSize: origF * 1.5 }, {
+          duration: 500,
+          easing: 'easeOutQuad',
+          onComplete: () => {
+            editor.tweenAnimate(id, { fontSize: origF }, {
+              duration: 500,
+              easing: 'easeInQuad'
+            });
+          }
+        });
+        log('缩放动画 (文字放大→恢复)');
+      } else {
+        log('该对象不支持缩放动画', 'warn');
+      }
+    }
+
+    // 淡入淡出动画
+    function animateFade() {
+      const id = getFirstObjectId();
+      if (!id) return;
+      editor.tweenAnimate(id, { opacity: 0.2 }, {
+        duration: 800,
+        easing: 'easeInOutQuad',
+        yoyo: true,
+        repeat: 2,
+        onComplete: () => {
+          // 确保动画结束后恢复完全不透明
+          editor.tweenAnimate(id, { opacity: 1 }, { duration: 100 });
+        }
+      });
+      log('淡入淡出动画');
+    }
+
+    // 导出 JSON
+    function exportJSON() {
+      const data = editor.exportJSON();
+      console.log('导出数据:', data);
+      log(`导出 JSON: ${data.objects.length} 个对象`);
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'canvas-data.json';
+      a.click();
+    }
+
+    // 导出 PNG
+    function exportPNG() {
+      editor.exportPNG();
+      log('导出 PNG');
+    }
+
+    // 清空画布
+    function clearCanvas() {
+      editor.setAttribute('initial-data', JSON.stringify({ objects: [] }));
+      objectCounter = 0;
+      log('画布已清空');
+    }
+
+    // 停止所有动画
+    function stopAllAnimations() {
+      editor.stopAllAnimations();
+      log('所有动画已停止');
+    }
+
+    log('编辑器已加载，热区功能已启用！');
+    log('画布中的「文本内容」会实时显示当前时间和问候语');
+  </script>
+</body>
+</html>
+

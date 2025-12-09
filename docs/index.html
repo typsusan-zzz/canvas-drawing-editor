@@ -184,12 +184,11 @@
               立即开始
             </a>
             <a
-              href="https://github.com/typsusan-zzz/canvas-drawing-editor"
-              target="_blank"
+              href="demo.html"
               class="inline-flex items-center px-8 py-3 border border-gray-300 text-base font-medium rounded-xl shadow-md text-gray-700 bg-white hover:bg-gray-50 transition duration-300"
             >
-              <i class="fab fa-github mr-2 text-primary"> </i>
-              GitHub
+              <i class="fas fa-play-circle mr-2 text-primary"> </i>
+              <span data-i18n="hero.demo">查看演示</span>
             </a>
           </div>
           <!-- 占位图/示意图 -->
@@ -320,6 +319,54 @@
               </h3>
               <p class="text-gray-600" data-i18n="features.framework.desc">
                 Web Component 标准，支持 Vue 2/3、React、Angular 和原生 HTML。
+              </p>
+            </div>
+            <!-- 特性卡片 7: Tween动画 -->
+            <div
+              class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
+            >
+              <div
+                class="flex items-center justify-center h-12 w-12 rounded-full bg-purple-100 text-purple-500 mb-4"
+              >
+                <i class="fas fa-film text-xl"> </i>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.tween.title">
+                🎬 Tween 动画
+              </h3>
+              <p class="text-gray-600" data-i18n="features.tween.desc">
+                对象属性过渡动画，支持位置、大小、旋转、透明度等属性的平滑动画效果。
+              </p>
+            </div>
+            <!-- 特性卡片 8: 移动端支持 -->
+            <div
+              class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
+            >
+              <div
+                class="flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-500 mb-4"
+              >
+                <i class="fas fa-mobile-alt text-xl"> </i>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.mobile.title">
+                📱 移动端优化
+              </h3>
+              <p class="text-gray-600" data-i18n="features.mobile.desc">
+                单指拖拽、双指缩放/旋转、长按选择，工具栏响应式布局。
+              </p>
+            </div>
+            <!-- 特性卡片 9: 更多形状 -->
+            <div
+              class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
+            >
+              <div
+                class="flex items-center justify-center h-12 w-12 rounded-full bg-pink-100 text-pink-500 mb-4"
+              >
+                <i class="fas fa-star text-xl"> </i>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.shapes.title">
+                ⭐ 丰富形状
+              </h3>
+              <p class="text-gray-600" data-i18n="features.shapes.desc">
+                星形、心形、三角形、菱形、贝塞尔曲线等多种形状，满足复杂设计需求。
               </p>
             </div>
           </div>
@@ -639,6 +686,27 @@ export class AppModule { }
                   <pre class="m-0"><code id="eventCloseCode" class="text-sm text-green-400" data-code="eventClose"></code></pre>
                 </div>
               </div>
+              <div class="border-l-4 border-purple-500 pl-4">
+                <h4 class="font-bold text-lg text-gray-800 mb-2">animation-start</h4>
+                <p class="text-gray-600 mb-3" data-i18n="docs.event.animStart.desc">动画开始时触发。</p>
+                <div class="bg-gray-800 p-4 rounded-lg overflow-x-auto">
+                  <pre class="m-0"><code id="eventAnimStartCode" class="text-sm text-green-400" data-code="eventAnimStart"></code></pre>
+                </div>
+              </div>
+              <div class="border-l-4 border-pink-500 pl-4">
+                <h4 class="font-bold text-lg text-gray-800 mb-2">animation-complete</h4>
+                <p class="text-gray-600 mb-3" data-i18n="docs.event.animComplete.desc">动画完成时触发。</p>
+                <div class="bg-gray-800 p-4 rounded-lg overflow-x-auto">
+                  <pre class="m-0"><code id="eventAnimCompleteCode" class="text-sm text-green-400" data-code="eventAnimComplete"></code></pre>
+                </div>
+              </div>
+              <div class="border-l-4 border-orange-500 pl-4">
+                <h4 class="font-bold text-lg text-gray-800 mb-2">animation-update</h4>
+                <p class="text-gray-600 mb-3" data-i18n="docs.event.animUpdate.desc">动画每帧更新时触发。</p>
+                <div class="bg-gray-800 p-4 rounded-lg overflow-x-auto">
+                  <pre class="m-0"><code id="eventAnimUpdateCode" class="text-sm text-green-400" data-code="eventAnimUpdate"></code></pre>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -809,7 +877,7 @@ export class AppModule { }
           'hero.title': '强大的 <span class="text-primary">Canvas</span> 画布编辑器',
           'hero.subtitle': '此组件为 Web Component，需要配合框架或原生 HTML 使用。<strong>零依赖</strong>，支持 Vue 2/3、React、Angular 和原生 HTML。',
           'hero.start': '<i class="fas fa-download mr-2"></i> 立即开始',
-          'hero.demo': '<i class="fas fa-play-circle mr-2 text-primary"></i> 查看演示',
+          'hero.demo': '查看演示',
           'features.subtitle': '核心能力',
           'features.title': '✨ 功能特性一览',
           'features.drawing.title': '🎨 绘图工具集',
@@ -821,7 +889,7 @@ export class AppModule { }
           'features.hotzone.title': '🔥 热区功能',
           'features.hotzone.desc': '给文本绑定动态变量，实现模板化设计，动态替换文本内容。',
           'features.zerodep.title': '⚡ 零依赖轻量',
-          'features.zerodep.desc': '纯 JavaScript 实现，gzip 后仅约 20KB，无框架负担。',
+          'features.zerodep.desc': '纯 JavaScript 实现，gzip 后仅约 33KB，无框架负担。',
           'features.framework.title': '🔌 跨框架兼容',
           'features.framework.desc': 'Web Component 标准，支持 Vue 2/3、React、Angular 和原生 HTML。',
           'install.subtitle': '快速上手',
@@ -853,6 +921,9 @@ export class AppModule { }
           'docs.table.desc': '说明',
           'docs.event.change.desc': '画布内容发生变化时触发，<code class="bg-gray-100 px-2 py-1 rounded text-sm">e.detail.objects</code> 包含所有绘图对象。',
           'docs.event.close.desc': '编辑器关闭时触发。',
+          'docs.event.animStart.desc': '动画开始时触发，<code class="bg-gray-100 px-2 py-1 rounded text-sm">e.detail</code> 包含 tweenId 和 objectId。',
+          'docs.event.animComplete.desc': '动画完成时触发，<code class="bg-gray-100 px-2 py-1 rounded text-sm">e.detail</code> 包含 tweenId 和 objectId。',
+          'docs.event.animUpdate.desc': '动画每帧更新时触发，<code class="bg-gray-100 px-2 py-1 rounded text-sm">e.detail.progress</code> 包含动画进度（0-1）。',
           'docs.objects.intro': '每个绘图对象都有以下基础属性：',
           'docs.objects.id': '唯一标识符',
           'docs.objects.type.desc': '对象类型: RECTANGLE, CIRCLE, PATH, TEXT, IMAGE, LINE, ARROW, POLYGON, GROUP',
@@ -918,6 +989,13 @@ export class AppModule { }
           'docs.hotzone.admin.desc': '右键点击文本 → 新建热区 → 输入变量名 → 保存',
           'docs.hotzone.user': '用户模式（展示动态数据）',
           'docs.hotzone.structure': '热区数据结构',
+          // 新增功能
+          'features.tween.title': '🎬 Tween 动画',
+          'features.tween.desc': '对象属性过渡动画，支持位置、大小、旋转、透明度等属性的平滑动画效果。',
+          'features.mobile.title': '📱 移动端优化',
+          'features.mobile.desc': '单指拖拽、双指缩放/旋转、长按选择，工具栏响应式布局。',
+          'features.shapes.title': '⭐ 丰富形状',
+          'features.shapes.desc': '星形、心形、三角形、菱形、贝塞尔曲线等多种形状，满足复杂设计需求。',
         },
         en: {
           'nav.features': 'Features',
@@ -927,7 +1005,7 @@ export class AppModule { }
           'hero.title': 'Powerful <span class="text-primary">Canvas</span> Drawing Editor',
           'hero.subtitle': 'A Web Component canvas editor. <strong>Zero dependencies</strong>, works with Vue 2/3, React, Angular, and vanilla HTML.',
           'hero.start': '<i class="fas fa-download mr-2"></i> Get Started',
-          'hero.demo': '<i class="fas fa-play-circle mr-2 text-primary"></i> View Demo',
+          'hero.demo': 'View Demo',
           'features.subtitle': 'Core Capabilities',
           'features.title': '✨ Feature Overview',
           'features.drawing.title': '🎨 Drawing Tools',
@@ -939,7 +1017,7 @@ export class AppModule { }
           'features.hotzone.title': '🔥 Hotzone Feature',
           'features.hotzone.desc': 'Bind dynamic variables to text for template-based dynamic content replacement.',
           'features.zerodep.title': '⚡ Zero Dependencies',
-          'features.zerodep.desc': 'Pure JavaScript, only ~20KB gzipped, no framework overhead.',
+          'features.zerodep.desc': 'Pure JavaScript, only ~33KB gzipped, no framework overhead.',
           'features.framework.title': '🔌 Cross-Framework',
           'features.framework.desc': 'Web Component standard, supports Vue 2/3, React, Angular and vanilla HTML.',
           'install.subtitle': 'Quick Start',
@@ -971,6 +1049,9 @@ export class AppModule { }
           'docs.table.desc': 'Description',
           'docs.event.change.desc': 'Triggered when canvas content changes, <code class="bg-gray-100 px-2 py-1 rounded text-sm">e.detail.objects</code> contains all drawing objects.',
           'docs.event.close.desc': 'Triggered when editor closes.',
+          'docs.event.animStart.desc': 'Triggered when animation starts, <code class="bg-gray-100 px-2 py-1 rounded text-sm">e.detail</code> contains tweenId and objectId.',
+          'docs.event.animComplete.desc': 'Triggered when animation completes, <code class="bg-gray-100 px-2 py-1 rounded text-sm">e.detail</code> contains tweenId and objectId.',
+          'docs.event.animUpdate.desc': 'Triggered on each animation frame, <code class="bg-gray-100 px-2 py-1 rounded text-sm">e.detail.progress</code> contains animation progress (0-1).',
           'docs.objects.intro': 'Each drawing object has the following base properties:',
           'docs.objects.id': 'Unique identifier',
           'docs.objects.type.desc': 'Object type: RECTANGLE, CIRCLE, PATH, TEXT, IMAGE, LINE, ARROW, POLYGON, GROUP',
@@ -1036,6 +1117,13 @@ export class AppModule { }
           'docs.hotzone.admin.desc': 'Right-click text → Create Hotzone → Enter variable name → Save',
           'docs.hotzone.user': 'User Mode (Display Dynamic Data)',
           'docs.hotzone.structure': 'Hotzone Data Structure',
+          // New features
+          'features.tween.title': '🎬 Tween Animation',
+          'features.tween.desc': 'Object property transition animations with smooth effects for position, size, rotation, opacity, etc.',
+          'features.mobile.title': '📱 Mobile Optimized',
+          'features.mobile.desc': 'Single finger drag, two-finger zoom/rotate, long press selection, responsive toolbar layout.',
+          'features.shapes.title': '⭐ Rich Shapes',
+          'features.shapes.desc': 'Star, heart, triangle, diamond, bezier curves and more shapes for complex design needs.',
         }
       };
 
@@ -1050,8 +1138,7 @@ export class AppModule { }
 &lt;/template&gt;
 
 &lt;script setup&gt;
-// 如果需要配置属性，可以在这里通过 ref 或 props 传递
-// 注意：Web Component 的属性绑定可能需要特殊处理，具体参考框架文档
+import 'canvas-drawing-editor';
 &lt;/script&gt;`,
           en: `&lt;template&gt;
   &lt;canvas-drawing-editor
@@ -1061,37 +1148,34 @@ export class AppModule { }
 &lt;/template&gt;
 
 &lt;script setup&gt;
-// Configure properties here via ref or props if needed
-// Note: Web Component property binding may need special handling, refer to framework docs
+import 'canvas-drawing-editor';
 &lt;/script&gt;`
         },
         react: {
-          zh: `import React from 'react';
-// 假设组件已通过 script 标签加载或已导入
+          zh: `import 'canvas-drawing-editor';
 
-const MyEditor = () =&gt; {
+function App() {
   return (
     &lt;canvas-drawing-editor
       title="React 画板"
       style={{ width: '100%', height: '600px' }}
     /&gt;
   );
-};
+}
 
-export default MyEditor;`,
-          en: `import React from 'react';
-// Assuming component is loaded via script tag or imported
+export default App;`,
+          en: `import 'canvas-drawing-editor';
 
-const MyEditor = () =&gt; {
+function App() {
   return (
     &lt;canvas-drawing-editor
       title="React Canvas"
       style={{ width: '100%', height: '600px' }}
     /&gt;
   );
-};
+}
 
-export default MyEditor;`
+export default App;`
         },
         eventChange: {
           zh: `document.addEventListener('editor-change', (e) =&gt; {
@@ -1109,6 +1193,36 @@ export default MyEditor;`
 });`,
           en: `document.addEventListener('editor-close', () =&gt; {
   console.log('Editor closed');
+});`
+        },
+        eventAnimStart: {
+          zh: `document.addEventListener('animation-start', (e) =&gt; {
+  console.log('动画开始:', e.detail);
+  // e.detail: { tweenId, objectId }
+});`,
+          en: `document.addEventListener('animation-start', (e) =&gt; {
+  console.log('Animation started:', e.detail);
+  // e.detail: { tweenId, objectId }
+});`
+        },
+        eventAnimComplete: {
+          zh: `document.addEventListener('animation-complete', (e) =&gt; {
+  console.log('动画完成:', e.detail);
+  // e.detail: { tweenId, objectId }
+});`,
+          en: `document.addEventListener('animation-complete', (e) =&gt; {
+  console.log('Animation completed:', e.detail);
+  // e.detail: { tweenId, objectId }
+});`
+        },
+        eventAnimUpdate: {
+          zh: `document.addEventListener('animation-update', (e) =&gt; {
+  console.log('动画进度:', e.detail.progress);
+  // e.detail: { tweenId, objectId, progress }
+});`,
+          en: `document.addEventListener('animation-update', (e) =&gt; {
+  console.log('Animation progress:', e.detail.progress);
+  // e.detail: { tweenId, objectId, progress }
 });`
         }
       };

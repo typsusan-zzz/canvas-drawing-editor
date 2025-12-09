@@ -4,7 +4,7 @@
  */
 
 // 类型定义
-export type ToolType = 'SELECT' | 'PENCIL' | 'RECTANGLE' | 'CIRCLE' | 'TEXT' | 'IMAGE' | 'LINE' | 'ARROW' | 'POLYGON';
+export type ToolType = 'SELECT' | 'PENCIL' | 'RECTANGLE' | 'CIRCLE' | 'TEXT' | 'IMAGE' | 'LINE' | 'ARROW' | 'DOUBLE_ARROW' | 'POLYGON' | 'TRIANGLE' | 'STAR' | 'HEART' | 'DIAMOND' | 'BEZIER' | 'RICH_TEXT';
 
 export interface Point {
   x: number;
@@ -20,17 +20,23 @@ export interface BaseObject {
   lineWidth: number;
   visible?: boolean;  // 图层可见性
   locked?: boolean;   // 图层锁定
+  rotation?: number;  // 旋转角度（弧度制，默认0）
+  skewX?: number;     // X轴斜切角度（弧度制，默认0）
+  skewY?: number;     // Y轴斜切角度（弧度制，默认0）
+  opacity?: number;   // 透明度（0-1，默认1）
 }
 
 export interface RectObject extends BaseObject {
   type: 'RECTANGLE';
   width: number;
   height: number;
+  lineStyle?: LineStyle;  // 线条样式
 }
 
 export interface CircleObject extends BaseObject {
   type: 'CIRCLE';
   radius: number;
+  lineStyle?: LineStyle;  // 线条样式
 }
 
 export interface PathObject extends BaseObject {
@@ -55,19 +61,166 @@ export interface TextObject extends BaseObject {
   hotzone?: HotzoneConfig; // 热区配置（可选）
 }
 
+// 富文本段落样式
+export interface RichTextSegment {
+  text: string;           // 文本内容
+  color?: string;         // 文本颜色（可选，默认继承父对象颜色）
+  fontSize?: number;      // 字体大小（可选，默认继承父对象大小）
+  fontFamily?: string;    // 字体（可选，默认继承父对象字体）
+  bold?: boolean;         // 加粗
+  italic?: boolean;       // 斜体
+  underline?: boolean;    // 下划线
+  strikethrough?: boolean; // 删除线
+  backgroundColor?: string; // 背景色（高亮）
+}
+
+// 富文本对象
+export interface RichTextObject extends BaseObject {
+  type: 'RICH_TEXT';
+  segments: RichTextSegment[];  // 富文本段落数组
+  fontSize: number;             // 默认字体大小
+  fontFamily?: string;          // 默认字体
+  lineHeight?: number;          // 行高倍数（默认1.2）
+  textAlign?: 'left' | 'center' | 'right';  // 文本对齐
+}
+
+// ========== Tween动画系统 ==========
+
+// 缓动函数类型
+export type EasingFunction = (t: number) => number;
+
+// 缓动函数集合
+export const Easing = {
+  linear: (t: number) => t,
+  easeInQuad: (t: number) => t * t,
+  easeOutQuad: (t: number) => t * (2 - t),
+  easeInOutQuad: (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
+  easeInCubic: (t: number) => t * t * t,
+  easeOutCubic: (t: number) => (--t) * t * t + 1,
+  easeInOutCubic: (t: number) => t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1,
+  easeInElastic: (t: number) => t === 0 ? 0 : t === 1 ? 1 : -Math.pow(2, 10 * t - 10) * Math.sin((t * 10 - 10.75) * ((2 * Math.PI) / 3)),
+  easeOutElastic: (t: number) => t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * ((2 * Math.PI) / 3)) + 1,
+  easeInOutElastic: (t: number) => {
+    const c5 = (2 * Math.PI) / 4.5;
+    return t === 0 ? 0 : t === 1 ? 1 : t < 0.5
+      ? -(Math.pow(2, 20 * t - 10) * Math.sin((20 * t - 11.125) * c5)) / 2
+      : (Math.pow(2, -20 * t + 10) * Math.sin((20 * t - 11.125) * c5)) / 2 + 1;
+  },
+  easeInBounce: (t: number) => 1 - Easing.easeOutBounce(1 - t),
+  easeOutBounce: (t: number) => {
+    const n1 = 7.5625, d1 = 2.75;
+    if (t < 1 / d1) return n1 * t * t;
+    if (t < 2 / d1) return n1 * (t -= 1.5 / d1) * t + 0.75;
+    if (t < 2.5 / d1) return n1 * (t -= 2.25 / d1) * t + 0.9375;
+    return n1 * (t -= 2.625 / d1) * t + 0.984375;
+  },
+  easeInOutBounce: (t: number) => t < 0.5 ? (1 - Easing.easeOutBounce(1 - 2 * t)) / 2 : (1 + Easing.easeOutBounce(2 * t - 1)) / 2,
+  easeInBack: (t: number) => { const c1 = 1.70158, c3 = c1 + 1; return c3 * t * t * t - c1 * t * t; },
+  easeOutBack: (t: number) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); },
+  easeInOutBack: (t: number) => {
+    const c1 = 1.70158, c2 = c1 * 1.525;
+    return t < 0.5 ? (Math.pow(2 * t, 2) * ((c2 + 1) * 2 * t - c2)) / 2
+      : (Math.pow(2 * t - 2, 2) * ((c2 + 1) * (t * 2 - 2) + c2) + 2) / 2;
+  }
+};
+
+// Tween动画配置
+export interface TweenConfig {
+  duration?: number;        // 动画时长（毫秒），默认 1000
+  delay?: number;           // 延迟开始（毫秒），默认 0
+  easing?: EasingFunction | keyof typeof Easing;  // 缓动函数
+  repeat?: number;          // 重复次数，-1 表示无限循环
+  yoyo?: boolean;           // 是否往返（配合 repeat 使用）
+  onStart?: () => void;     // 动画开始回调
+  onUpdate?: (progress: number) => void;  // 每帧更新回调
+  onComplete?: () => void;  // 动画完成回调
+}
+
+// 动画属性值
+export interface TweenProps {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  radius?: number;
+  rotation?: number;
+  opacity?: number;
+  fontSize?: number;
+  [key: string]: number | undefined;
+}
+
+// Tween实例
+export interface TweenInstance {
+  id: string;               // 动画唯一ID
+  objectId: string;         // 目标对象ID
+  fromProps: TweenProps;    // 起始属性
+  toProps: TweenProps;      // 目标属性
+  config: Required<Omit<TweenConfig, 'onStart' | 'onUpdate' | 'onComplete'>> & Pick<TweenConfig, 'onStart' | 'onUpdate' | 'onComplete'>;
+  startTime: number;        // 开始时间
+  currentRepeat: number;    // 当前重复次数
+  isReversed: boolean;      // 是否处于反向阶段（yoyo模式）
+  isStarted: boolean;       // 是否已开始
+  isCompleted: boolean;     // 是否已完成
+}
+
+// ========== 触摸手势系统 ==========
+
+// 触摸点信息
+export interface TouchPoint {
+  id: number;
+  x: number;
+  y: number;
+  startX: number;
+  startY: number;
+  timestamp: number;
+}
+
+// 手势类型
+export type GestureType = 'none' | 'tap' | 'longPress' | 'drag' | 'pinch' | 'rotate';
+
+// 触摸状态
+export interface TouchState {
+  touches: Map<number, TouchPoint>;
+  gestureType: GestureType;
+  initialDistance: number;      // 双指初始距离（用于缩放）
+  initialAngle: number;         // 双指初始角度（用于旋转）
+  initialScale: number;         // 初始缩放值
+  initialRotation: number;      // 初始旋转值
+  longPressTimer: number | null; // 长按定时器
+  lastTapTime: number;          // 上次点击时间（用于双击检测）
+  velocity: Point;              // 惯性速度
+}
+
+// 图片滤镜配置
+export interface ImageFilters {
+  brightness?: number;  // 亮度 0-200，100为正常
+  contrast?: number;    // 对比度 0-200，100为正常
+  blur?: number;        // 模糊 0-20
+  grayscale?: number;   // 灰度 0-100
+  saturate?: number;    // 饱和度 0-200，100为正常
+}
+
 export interface ImageObject extends BaseObject {
   type: 'IMAGE';
   width: number;
   height: number;
   dataUrl: string;
   imageElement?: HTMLImageElement;
+  filters?: ImageFilters;  // 滤镜配置
 }
+
+// 线条样式类型
+export type LineStyle = 'solid' | 'dashed' | 'dotted';
+
+// 箭头类型
+export type ArrowType = 'single' | 'double' | 'none';
 
 // 线条对象
 export interface LineObject extends BaseObject {
   type: 'LINE';
   x2: number;
   y2: number;
+  lineStyle?: LineStyle;  // 线条样式：实线/虚线/点线
 }
 
 // 箭头对象
@@ -75,6 +228,8 @@ export interface ArrowObject extends BaseObject {
   type: 'ARROW';
   x2: number;
   y2: number;
+  lineStyle?: LineStyle;  // 线条样式
+  arrowType?: ArrowType;  // 箭头类型：单向/双向/无
 }
 
 // 多边形对象
@@ -83,6 +238,57 @@ export interface PolygonObject extends BaseObject {
   sides: number;    // 边数（3=三角形，5=五边形，6=六边形等）
   radius: number;   // 外接圆半径
   rotation?: number; // 旋转角度
+  lineStyle?: LineStyle;  // 线条样式
+}
+
+// 三角形对象
+export interface TriangleObject extends BaseObject {
+  type: 'TRIANGLE';
+  radius: number;   // 外接圆半径
+  lineStyle?: LineStyle;  // 线条样式
+}
+
+// 星形对象
+export interface StarObject extends BaseObject {
+  type: 'STAR';
+  points: number;      // 星形角数（5=五角星）
+  outerRadius: number; // 外半径
+  innerRadius: number; // 内半径
+  lineStyle?: LineStyle;  // 线条样式
+}
+
+// 心形对象
+export interface HeartObject extends BaseObject {
+  type: 'HEART';
+  size: number;  // 心形大小
+  lineStyle?: LineStyle;  // 线条样式
+}
+
+// 菱形对象
+export interface DiamondObject extends BaseObject {
+  type: 'DIAMOND';
+  width: number;
+  height: number;
+  lineStyle?: LineStyle;  // 线条样式
+}
+
+// 贝塞尔曲线控制点
+export interface BezierPoint {
+  x: number;           // 锚点 x
+  y: number;           // 锚点 y
+  cp1x?: number;       // 控制点1 x（入控制点）
+  cp1y?: number;       // 控制点1 y
+  cp2x?: number;       // 控制点2 x（出控制点）
+  cp2y?: number;       // 控制点2 y
+  type: 'corner' | 'smooth' | 'symmetric';  // 点类型：角点、平滑、对称
+}
+
+// 贝塞尔曲线对象
+export interface BezierObject extends BaseObject {
+  type: 'BEZIER';
+  points: BezierPoint[];  // 贝塞尔曲线点列表
+  closed: boolean;        // 是否闭合路径
+  fill?: string;          // 填充颜色（可选）
 }
 
 // 组合对象
@@ -93,7 +299,7 @@ export interface GroupObject extends BaseObject {
   height: number;
 }
 
-export type CanvasObject = RectObject | CircleObject | PathObject | TextObject | ImageObject | LineObject | ArrowObject | PolygonObject | GroupObject;
+export type CanvasObject = RectObject | CircleObject | PathObject | TextObject | RichTextObject | ImageObject | LineObject | ArrowObject | PolygonObject | TriangleObject | StarObject | HeartObject | DiamondObject | BezierObject | GroupObject;
 
 export type LangType = 'zh' | 'en';
 
@@ -108,6 +314,11 @@ export interface ToolConfig {
   line?: boolean;         // 线条
   arrow?: boolean;        // 箭头
   polygon?: boolean;      // 多边形
+  triangle?: boolean;     // 三角形
+  star?: boolean;         // 星形
+  heart?: boolean;        // 心形
+  diamond?: boolean;      // 菱形
+  bezier?: boolean;       // 贝塞尔曲线/钢笔工具
   // 操作功能
   undo?: boolean;         // 撤销
   redo?: boolean;         // 重做
@@ -182,7 +393,36 @@ const i18n: Record<LangType, Record<string, string>> = {
     // 新增图形工具
     line: '线条 (L)',
     arrow: '箭头 (A)',
+    doubleArrow: '双向箭头',
     polygon: '多边形',
+    triangle: '三角形',
+    star: '星形',
+    heart: '心形',
+    diamond: '菱形',
+    bezier: '钢笔',
+    bezierTool: '钢笔工具',
+    closePath: '闭合路径',
+    // 线条样式
+    lineStyleSolid: '实线',
+    lineStyleDashed: '虚线',
+    lineStyleDotted: '点线',
+    // 箭头类型
+    arrowTypeSingle: '单向箭头',
+    arrowTypeDouble: '双向箭头',
+    arrowTypeNone: '无箭头',
+    // 滤镜
+    filters: '滤镜',
+    brightness: '亮度',
+    contrast: '对比度',
+    blur: '模糊',
+    grayscale: '灰度',
+    saturate: '饱和度',
+    resetFilters: '重置滤镜',
+    // 斜切变换
+    skew: '斜切',
+    skewX: 'X轴斜切',
+    skewY: 'Y轴斜切',
+    resetSkew: '重置斜切',
     // 图层管理
     layers: '图层',
     layerUp: '上移图层',
@@ -227,6 +467,23 @@ const i18n: Record<LangType, Record<string, string>> = {
     hotzoneSave: '保存',
     hotzoneCancel: '取消',
     hotzoneVariableNameRequired: '变量名不能为空',
+    // 富文本
+    richText: '富文本',
+    richTextPlaceholder: '请输入文字',
+    addSegment: '添加段落',
+    // Tween动画
+    tweenAnimation: '动画',
+    noAnimations: '暂无动画，选择对象后使用 tweenAnimate() 方法添加动画',
+    play: '播放',
+    pause: '暂停',
+    stop: '停止',
+    addKeyframe: '添加关键帧',
+    timeline: '时间线',
+    // 移动端
+    touchDrag: '单指拖拽',
+    touchPinch: '双指缩放',
+    touchRotate: '双指旋转',
+    longPress: '长按选择',
   },
   en: {
     select: 'Select (V)',
@@ -257,7 +514,36 @@ const i18n: Record<LangType, Record<string, string>> = {
     // New shape tools
     line: 'Line (L)',
     arrow: 'Arrow (A)',
+    doubleArrow: 'Double Arrow',
     polygon: 'Polygon',
+    triangle: 'Triangle',
+    star: 'Star',
+    heart: 'Heart',
+    diamond: 'Diamond',
+    bezier: 'Pen',
+    bezierTool: 'Pen Tool',
+    closePath: 'Close Path',
+    // Line styles
+    lineStyleSolid: 'Solid',
+    lineStyleDashed: 'Dashed',
+    lineStyleDotted: 'Dotted',
+    // Arrow types
+    arrowTypeSingle: 'Single Arrow',
+    arrowTypeDouble: 'Double Arrow',
+    arrowTypeNone: 'No Arrow',
+    // Filters
+    filters: 'Filters',
+    brightness: 'Brightness',
+    contrast: 'Contrast',
+    blur: 'Blur',
+    grayscale: 'Grayscale',
+    saturate: 'Saturate',
+    resetFilters: 'Reset Filters',
+    // Skew transform
+    skew: 'Skew',
+    skewX: 'Skew X',
+    skewY: 'Skew Y',
+    resetSkew: 'Reset Skew',
     // Layer management
     layers: 'Layers',
     layerUp: 'Move Up',
@@ -302,6 +588,23 @@ const i18n: Record<LangType, Record<string, string>> = {
     hotzoneSave: 'Save',
     hotzoneCancel: 'Cancel',
     hotzoneVariableNameRequired: 'Variable name is required',
+    // Rich text
+    richText: 'Rich Text',
+    richTextPlaceholder: 'Enter text',
+    addSegment: 'Add Segment',
+    // Tween animation
+    tweenAnimation: 'Animation',
+    noAnimations: 'No animations. Select an object and use tweenAnimate() method to add animations',
+    play: 'Play',
+    pause: 'Pause',
+    stop: 'Stop',
+    addKeyframe: 'Add Keyframe',
+    timeline: 'Timeline',
+    // Mobile touch
+    touchDrag: 'Drag',
+    touchPinch: 'Pinch to Zoom',
+    touchRotate: 'Rotate',
+    longPress: 'Long Press to Select',
   },
 };
 
@@ -319,6 +622,11 @@ const defaultToolConfig: ToolConfig = {
   line: true,
   arrow: true,
   polygon: true,
+  triangle: true,
+  star: true,
+  heart: true,
+  diamond: true,
+  bezier: true,
   // 操作功能
   undo: true,
   redo: true,
@@ -378,6 +686,19 @@ export class CanvasDrawingEditor extends HTMLElement {
   private textInput!: HTMLInputElement;
   private textInputContainer!: HTMLDivElement;
 
+  // 富文本编辑器
+  private richTextEditor!: HTMLDivElement;
+  private richTextSegments: RichTextSegment[] = [];
+  private selectedSegmentIndex: number = -1;
+  private richTextPosition: Point = { x: 0, y: 0 };
+  private editingRichTextId: string | null = null;
+
+  // 时间线编辑器
+  private timelineEditor!: HTMLDivElement;
+  private timelineIsPlaying: boolean = false;
+  private timelineCurrentTime: number = 0;
+  private timelineDuration: number = 3000; // 默认3秒
+
   // 配置
   private config: EditorConfig = { ...defaultConfig };
 
@@ -387,6 +708,8 @@ export class CanvasDrawingEditor extends HTMLElement {
   private tool: ToolType = 'SELECT';
   private color: string = '#000000';
   private lineWidth: number = 3;
+  private lineStyle: LineStyle = 'solid';
+  private arrowType: ArrowType = 'single';
 
   // 交互状态
   private isDragging: boolean = false;
@@ -406,6 +729,18 @@ export class CanvasDrawingEditor extends HTMLElement {
   private resizeStartBounds: { x: number; y: number; width: number; height: number } | null = null;
   private resizeOriginalObject: CanvasObject | null = null;
 
+  // 旋转状态
+  private isRotating: boolean = false;
+  private rotateStartAngle: number = 0;
+  private rotateObjectStartRotation: number = 0;
+
+  // 斜切状态
+  private isSkewing: boolean = false;
+  private skewHandle: 'top' | 'bottom' | 'left' | 'right' | null = null;
+  private skewStartPos: Point = { x: 0, y: 0 };
+  private skewObjectStartSkewX: number = 0;
+  private skewObjectStartSkewY: number = 0;
+
   // 历史记录
   private history: CanvasObject[][] = [];
   private redoHistory: CanvasObject[][] = [];  // 重做历史
@@ -417,6 +752,20 @@ export class CanvasDrawingEditor extends HTMLElement {
   private selectionRect: { x: number; y: number; width: number; height: number } | null = null;
   private isMultiDragging: boolean = false;      // 是否正在多选拖动
   private multiDragStart: Point = { x: 0, y: 0 }; // 多选拖动起始点
+
+  // 多对象变换原点控制
+  private transformOrigin: Point | null = null;  // 自定义变换原点（null表示使用默认中心点）
+  private isDraggingOrigin: boolean = false;     // 是否正在拖拽变换原点
+  private isMultiRotating: boolean = false;      // 是否正在多选旋转
+  private multiRotateStartAngle: number = 0;     // 多选旋转起始角度
+  private multiRotateObjectsStart: Map<string, { x: number; y: number; rotation: number }> = new Map();
+
+  // 贝塞尔曲线工具状态
+  private bezierPoints: BezierPoint[] = [];           // 当前绘制的贝塞尔点
+  private isBezierDrawing: boolean = false;           // 是否正在绘制贝塞尔曲线
+  private bezierDraggingPoint: number = -1;           // 正在拖拽的点索引
+  private bezierDraggingHandle: 'cp1' | 'cp2' | null = null;  // 正在拖拽的控制柄
+  private bezierTempPoint: BezierPoint | null = null; // 临时预览点
 
   // 图层面板状态
   private layerPanelVisible: boolean = false;
@@ -441,6 +790,27 @@ export class CanvasDrawingEditor extends HTMLElement {
   private hotzoneDrawer!: HTMLDivElement;
   private hotzoneEditingTextId: string | null = null;
   private hotzoneData: Record<string, string> = {};
+
+  // Tween动画系统
+  private tweens: Map<string, TweenInstance> = new Map();
+  private animationFrameId: number | null = null;
+  private isAnimating: boolean = false;
+
+  // 触摸手势系统
+  private touchState: TouchState = {
+    touches: new Map(),
+    gestureType: 'none',
+    initialDistance: 0,
+    initialAngle: 0,
+    initialScale: 1,
+    initialRotation: 0,
+    longPressTimer: null,
+    lastTapTime: 0,
+    velocity: { x: 0, y: 0 }
+  };
+  private readonly LONG_PRESS_DURATION = 500; // 长按触发时间（毫秒）
+  private readonly PINCH_THRESHOLD = 10;      // 捏合手势阈值（像素）
+  private inertiaAnimationId: number | null = null;
 
   constructor() {
     super();
@@ -492,8 +862,56 @@ export class CanvasDrawingEditor extends HTMLElement {
       return;
     }
 
+    // 处理 hotzone-data 属性变化（实时更新热区文本）
+    if (name === 'hotzone-data' && this.canvas) {
+      this.parseHotzoneData();
+      this.applyHotzoneData();
+      this.renderCanvas();
+      return;
+    }
+
+    // 需要重新渲染 UI 的属性
+    const rerenderAttributes = ['title', 'lang', 'theme-color', 'tool-config', 'enable-hotzone',
+      'show-pencil', 'show-rectangle', 'show-circle', 'show-text', 'show-image', 'show-zoom',
+      'show-download', 'show-export', 'show-import', 'show-color', 'show-clear', 'show-line',
+      'show-arrow', 'show-polygon', 'show-undo', 'show-redo', 'show-layers', 'show-group', 'show-align'];
+
     this.parseAttributes();
-    if (this.container) {
+
+    if (this.container && rerenderAttributes.includes(name)) {
+      // 保存当前画布数据和状态
+      const currentObjects = [...this.objects];
+      const currentScale = this.scale;
+      const currentPanOffset = { ...this.panOffset };
+      const currentSelectedIds = new Set(this.selectedIds);
+
+      // 重新渲染 UI（工具栏、样式等）
+      this.render();
+      this.setupEventListeners();
+      this.initCanvas(false); // 不加载初始数据
+
+      // 恢复画布数据和状态
+      this.objects = currentObjects;
+      this.scale = currentScale;
+      this.panOffset = currentPanOffset;
+      this.selectedIds = currentSelectedIds;
+
+      // 重新加载图片元素
+      this.objects.forEach(obj => {
+        if (obj.type === 'IMAGE' && (obj as ImageObject).dataUrl) {
+          const img = new Image();
+          img.onload = () => {
+            (obj as ImageObject).imageElement = img;
+            this.renderCanvas();
+          };
+          img.src = (obj as ImageObject).dataUrl;
+        }
+      });
+
+      // 重新渲染画布
+      this.updateZoomDisplay();
+      this.renderCanvas();
+    } else if (this.container) {
       this.updateUI();
     }
   }
@@ -524,6 +942,11 @@ export class CanvasDrawingEditor extends HTMLElement {
         line: this.getAttribute('show-line') !== 'false',
         arrow: this.getAttribute('show-arrow') !== 'false',
         polygon: this.getAttribute('show-polygon') !== 'false',
+        triangle: this.getAttribute('show-triangle') !== 'false',
+        star: this.getAttribute('show-star') !== 'false',
+        heart: this.getAttribute('show-heart') !== 'false',
+        diamond: this.getAttribute('show-diamond') !== 'false',
+        bezier: this.getAttribute('show-bezier') !== 'false',
         undo: this.getAttribute('show-undo') !== 'false',
         redo: this.getAttribute('show-redo') !== 'false',
         zoom: this.getAttribute('show-zoom') !== 'false',
@@ -595,7 +1018,7 @@ export class CanvasDrawingEditor extends HTMLElement {
   }
 
   // 精确测量文本宽度
-  private measureTextWidth(text: string, fontSize: number): number {
+  private measureTextWidth(text: string, fontSize: number, fontFamily: string = 'sans-serif', bold: boolean = false, italic: boolean = false): number {
     if (!this.ctx) {
       // 回退方案：粗略估算（中文字符1倍，英文0.6倍）
       let width = 0;
@@ -605,10 +1028,76 @@ export class CanvasDrawingEditor extends HTMLElement {
       return width;
     }
     this.ctx.save();
-    this.ctx.font = `${fontSize}px sans-serif`;
+    const boldStr = bold ? 'bold ' : '';
+    const italicStr = italic ? 'italic ' : '';
+    this.ctx.font = `${italicStr}${boldStr}${fontSize}px ${fontFamily}`;
     const metrics = this.ctx.measureText(text);
     this.ctx.restore();
     return metrics.width;
+  }
+
+  // 测量富文本总宽度
+  private measureRichTextWidth(rt: RichTextObject): number {
+    let totalWidth = 0;
+    const defaultFontFamily = rt.fontFamily || 'sans-serif';
+
+    for (const segment of rt.segments) {
+      const fontSize = segment.fontSize || rt.fontSize;
+      const fontFamily = segment.fontFamily || defaultFontFamily;
+      const bold = segment.bold || false;
+      const italic = segment.italic || false;
+      totalWidth += this.measureTextWidth(segment.text, fontSize, fontFamily, bold, italic);
+    }
+
+    return totalWidth;
+  }
+
+  // 获取富文本最大字体大小
+  private getRichTextMaxFontSize(rt: RichTextObject): number {
+    let maxFontSize = rt.fontSize;
+    for (const segment of rt.segments) {
+      if (segment.fontSize && segment.fontSize > maxFontSize) {
+        maxFontSize = segment.fontSize;
+      }
+    }
+    return maxFontSize;
+  }
+
+  // ========== 路径文本辅助方法 ==========
+
+  // 计算两点之间的距离
+  private distanceBetweenPoints(p1: Point, p2: Point): number {
+    return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+  }
+
+  // 计算二次贝塞尔曲线上的点
+  private getQuadraticBezierPoint(t: number, p0: Point, p1: Point, p2: Point): Point {
+    const mt = 1 - t;
+    return {
+      x: mt * mt * p0.x + 2 * mt * t * p1.x + t * t * p2.x,
+      y: mt * mt * p0.y + 2 * mt * t * p1.y + t * t * p2.y
+    };
+  }
+
+  // 计算三次贝塞尔曲线上的点
+  private getCubicBezierPoint(t: number, p0: Point, p1: Point, p2: Point, p3: Point): Point {
+    const mt = 1 - t;
+    const mt2 = mt * mt;
+    const mt3 = mt2 * mt;
+    const t2 = t * t;
+    const t3 = t2 * t;
+    return {
+      x: mt3 * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t3 * p3.x,
+      y: mt3 * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t3 * p3.y
+    };
+  }
+
+  // 将屏幕坐标转换为画布坐标
+  private screenToCanvas(screenX: number, screenY: number): Point {
+    return {
+      x: (screenX - this.panOffset.x) / this.scale,
+      y: (screenY - this.panOffset.y) / this.scale
+    };
   }
 
   // 加载初始数据
@@ -760,6 +1249,12 @@ export class CanvasDrawingEditor extends HTMLElement {
         const width = this.measureTextWidth(t.text, t.fontSize);
         return { x: t.x, y: t.y - t.fontSize, width, height: t.fontSize * 1.2 };
       }
+      case 'RICH_TEXT': {
+        const rt = obj as RichTextObject;
+        const width = this.measureRichTextWidth(rt);
+        const maxFontSize = this.getRichTextMaxFontSize(rt);
+        return { x: rt.x, y: rt.y - maxFontSize, width, height: maxFontSize * (rt.lineHeight || 1.2) };
+      }
       case 'PATH': {
         const p = obj as PathObject;
         if (p.points.length === 0) return { x: 0, y: 0, width: 0, height: 0 };
@@ -789,6 +1284,34 @@ export class CanvasDrawingEditor extends HTMLElement {
         const pg = obj as PolygonObject;
         return { x: pg.x - pg.radius, y: pg.y - pg.radius, width: pg.radius * 2, height: pg.radius * 2 };
       }
+      case 'TRIANGLE': {
+        const tri = obj as TriangleObject;
+        return { x: tri.x - tri.radius, y: tri.y - tri.radius, width: tri.radius * 2, height: tri.radius * 2 };
+      }
+      case 'STAR': {
+        const star = obj as StarObject;
+        return { x: star.x - star.outerRadius, y: star.y - star.outerRadius, width: star.outerRadius * 2, height: star.outerRadius * 2 };
+      }
+      case 'HEART': {
+        const heart = obj as HeartObject;
+        return { x: heart.x - heart.size, y: heart.y - heart.size * 0.3, width: heart.size * 2, height: heart.size * 1.3 };
+      }
+      case 'DIAMOND': {
+        const diamond = obj as DiamondObject;
+        return { x: diamond.x - diamond.width / 2, y: diamond.y - diamond.height / 2, width: diamond.width, height: diamond.height };
+      }
+      case 'BEZIER': {
+        const bezier = obj as BezierObject;
+        if (bezier.points.length === 0) return { x: 0, y: 0, width: 0, height: 0 };
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        bezier.points.forEach(pt => {
+          minX = Math.min(minX, pt.x, pt.cp1x ?? pt.x, pt.cp2x ?? pt.x);
+          minY = Math.min(minY, pt.y, pt.cp1y ?? pt.y, pt.cp2y ?? pt.y);
+          maxX = Math.max(maxX, pt.x, pt.cp1x ?? pt.x, pt.cp2x ?? pt.x);
+          maxY = Math.max(maxY, pt.y, pt.cp1y ?? pt.y, pt.cp2y ?? pt.y);
+        });
+        return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+      }
       case 'GROUP': {
         const g = obj as GroupObject;
         return { x: g.x, y: g.y, width: g.width, height: g.height };
@@ -801,13 +1324,49 @@ export class CanvasDrawingEditor extends HTMLElement {
   private getResizeHandleAtPoint(obj: CanvasObject, x: number, y: number): string | null {
     const bounds = this.getObjectBounds(obj);
     const handleSize = 8;
+    const centerX = bounds.x + bounds.width / 2;
+    const centerY = bounds.y + bounds.height / 2;
 
-    const handles = [
+    // 本地坐标系中的手柄位置
+    const localHandles = [
       { name: 'nw', x: bounds.x, y: bounds.y },
       { name: 'ne', x: bounds.x + bounds.width, y: bounds.y },
       { name: 'sw', x: bounds.x, y: bounds.y + bounds.height },
       { name: 'se', x: bounds.x + bounds.width, y: bounds.y + bounds.height },
     ];
+
+    // 如果对象有旋转或斜切，将本地手柄坐标转换为屏幕坐标
+    const handles = localHandles.map(handle => {
+      if (obj.rotation || obj.skewX || obj.skewY) {
+        let dx = handle.x - centerX;
+        let dy = handle.y - centerY;
+
+        // 先应用斜切变换
+        if (obj.skewX || obj.skewY) {
+          const newDx = dx + (obj.skewX || 0) * dy;
+          const newDy = dy + (obj.skewY || 0) * dx;
+          dx = newDx;
+          dy = newDy;
+        }
+
+        // 再应用旋转变换
+        if (obj.rotation) {
+          const cos = Math.cos(obj.rotation);
+          const sin = Math.sin(obj.rotation);
+          const rotatedDx = dx * cos - dy * sin;
+          const rotatedDy = dx * sin + dy * cos;
+          dx = rotatedDx;
+          dy = rotatedDy;
+        }
+
+        return {
+          name: handle.name,
+          x: centerX + dx,
+          y: centerY + dy
+        };
+      }
+      return handle;
+    });
 
     for (const handle of handles) {
       if (Math.abs(x - handle.x) <= handleSize && Math.abs(y - handle.y) <= handleSize) {
@@ -817,26 +1376,114 @@ export class CanvasDrawingEditor extends HTMLElement {
     return null;
   }
 
+  // 获取旋转手柄位置（考虑对象旋转和斜切后的屏幕坐标）
+  private getRotateHandlePosition(obj: CanvasObject): Point {
+    const bounds = this.getObjectBounds(obj);
+    const rotateHandleDistance = 30;
+    const centerX = bounds.x + bounds.width / 2;
+    const centerY = bounds.y + bounds.height / 2;
+
+    // 旋转手柄在本地坐标系中的位置（在对象上方中心）
+    let dx = 0; // centerX - centerX
+    let dy = bounds.y - rotateHandleDistance - centerY;
+
+    // 如果对象有旋转或斜切，将本地坐标转换为屏幕坐标
+    if (obj.rotation || obj.skewX || obj.skewY) {
+      // 先应用斜切变换
+      if (obj.skewX || obj.skewY) {
+        const newDx = dx + (obj.skewX || 0) * dy;
+        const newDy = dy + (obj.skewY || 0) * dx;
+        dx = newDx;
+        dy = newDy;
+      }
+
+      // 再应用旋转变换
+      if (obj.rotation) {
+        const cos = Math.cos(obj.rotation);
+        const sin = Math.sin(obj.rotation);
+        const rotatedDx = dx * cos - dy * sin;
+        const rotatedDy = dx * sin + dy * cos;
+        dx = rotatedDx;
+        dy = rotatedDy;
+      }
+    }
+
+    return { x: centerX + dx, y: centerY + dy };
+  }
+
+  // 检测是否点击了旋转手柄
+  private isPointOnRotateHandle(obj: CanvasObject, x: number, y: number): boolean {
+    const handlePos = this.getRotateHandlePosition(obj);
+    const handleRadius = 8; // 稍大一点的点击区域
+    const dist = Math.sqrt(Math.pow(x - handlePos.x, 2) + Math.pow(y - handlePos.y, 2));
+    return dist <= handleRadius;
+  }
+
   // 碰撞检测
   private isHit(obj: CanvasObject, x: number, y: number): boolean {
+    // 如果对象有旋转或斜切，需要将点击坐标反向变换到对象的本地坐标系
+    let localX = x;
+    let localY = y;
+    const bounds = this.getObjectBounds(obj);
+    const centerX = bounds.x + bounds.width / 2;
+    const centerY = bounds.y + bounds.height / 2;
+
+    if (obj.rotation || obj.skewX || obj.skewY) {
+      // 先平移到中心
+      let dx = x - centerX;
+      let dy = y - centerY;
+
+      // 反向旋转
+      if (obj.rotation) {
+        const cos = Math.cos(-obj.rotation);
+        const sin = Math.sin(-obj.rotation);
+        const newDx = dx * cos - dy * sin;
+        const newDy = dx * sin + dy * cos;
+        dx = newDx;
+        dy = newDy;
+      }
+
+      // 反向斜切（逆矩阵）
+      if (obj.skewX || obj.skewY) {
+        const skewX = obj.skewX || 0;
+        const skewY = obj.skewY || 0;
+        const det = 1 - skewX * skewY;
+        if (Math.abs(det) > 0.001) {
+          const newDx = (dx - skewX * dy) / det;
+          const newDy = (dy - skewY * dx) / det;
+          dx = newDx;
+          dy = newDy;
+        }
+      }
+
+      localX = centerX + dx;
+      localY = centerY + dy;
+    }
+
     switch (obj.type) {
       case 'RECTANGLE': {
         const r = obj as RectObject;
-        return x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height;
+        return localX >= r.x && localX <= r.x + r.width && localY >= r.y && localY <= r.y + r.height;
       }
       case 'CIRCLE': {
         const c = obj as CircleObject;
-        const dist = Math.sqrt(Math.pow(x - c.x, 2) + Math.pow(y - c.y, 2));
+        const dist = Math.sqrt(Math.pow(localX - c.x, 2) + Math.pow(localY - c.y, 2));
         return dist <= c.radius;
       }
       case 'IMAGE': {
         const img = obj as ImageObject;
-        return x >= img.x && x <= img.x + img.width && y >= img.y && y <= img.y + img.height;
+        return localX >= img.x && localX <= img.x + img.width && localY >= img.y && localY <= img.y + img.height;
       }
       case 'TEXT': {
         const t = obj as TextObject;
         const width = this.measureTextWidth(t.text, t.fontSize);
-        return x >= t.x && x <= t.x + width && y >= t.y - t.fontSize && y <= t.y + t.fontSize * 0.2;
+        return localX >= t.x && localX <= t.x + width && localY >= t.y - t.fontSize && localY <= t.y + t.fontSize * 0.2;
+      }
+      case 'RICH_TEXT': {
+        const rt = obj as RichTextObject;
+        const width = this.measureRichTextWidth(rt);
+        const maxFontSize = this.getRichTextMaxFontSize(rt);
+        return localX >= rt.x && localX <= rt.x + width && localY >= rt.y - maxFontSize && localY <= rt.y + maxFontSize * 0.2;
       }
       case 'PATH': {
         const p = obj as PathObject;
@@ -845,27 +1492,53 @@ export class CanvasDrawingEditor extends HTMLElement {
         const maxX = Math.max(...p.points.map(pt => pt.x));
         const minY = Math.min(...p.points.map(pt => pt.y));
         const maxY = Math.max(...p.points.map(pt => pt.y));
-        return x >= minX && x <= maxX && y >= minY && y <= maxY;
+        return localX >= minX && localX <= maxX && localY >= minY && localY <= maxY;
       }
       case 'LINE': {
         const l = obj as LineObject;
         // 检查点到线段的距离
-        const dist = this.pointToLineDistance(x, y, l.x, l.y, l.x2, l.y2);
+        const dist = this.pointToLineDistance(localX, localY, l.x, l.y, l.x2, l.y2);
         return dist <= 10;
       }
       case 'ARROW': {
         const a = obj as ArrowObject;
-        const dist = this.pointToLineDistance(x, y, a.x, a.y, a.x2, a.y2);
+        const dist = this.pointToLineDistance(localX, localY, a.x, a.y, a.x2, a.y2);
         return dist <= 10;
       }
       case 'POLYGON': {
         const pg = obj as PolygonObject;
-        const dist = Math.sqrt(Math.pow(x - pg.x, 2) + Math.pow(y - pg.y, 2));
+        const dist = Math.sqrt(Math.pow(localX - pg.x, 2) + Math.pow(localY - pg.y, 2));
         return dist <= pg.radius;
+      }
+      case 'TRIANGLE': {
+        const tri = obj as TriangleObject;
+        const dist = Math.sqrt(Math.pow(localX - tri.x, 2) + Math.pow(localY - tri.y, 2));
+        return dist <= tri.radius;
+      }
+      case 'STAR': {
+        const star = obj as StarObject;
+        const dist = Math.sqrt(Math.pow(localX - star.x, 2) + Math.pow(localY - star.y, 2));
+        return dist <= star.outerRadius;
+      }
+      case 'HEART': {
+        const heart = obj as HeartObject;
+        const bounds = this.getObjectBounds(heart);
+        return localX >= bounds.x && localX <= bounds.x + bounds.width && localY >= bounds.y && localY <= bounds.y + bounds.height;
+      }
+      case 'DIAMOND': {
+        const diamond = obj as DiamondObject;
+        const bounds = this.getObjectBounds(diamond);
+        return localX >= bounds.x && localX <= bounds.x + bounds.width && localY >= bounds.y && localY <= bounds.y + bounds.height;
+      }
+      case 'BEZIER': {
+        const bezier = obj as BezierObject;
+        const bounds = this.getObjectBounds(bezier);
+        // 简单的边界框检测
+        return localX >= bounds.x && localX <= bounds.x + bounds.width && localY >= bounds.y && localY <= bounds.y + bounds.height;
       }
       case 'GROUP': {
         const g = obj as GroupObject;
-        return x >= g.x && x <= g.x + g.width && y >= g.y && y <= g.y + g.height;
+        return localX >= g.x && localX <= g.x + g.width && localY >= g.y && localY <= g.y + g.height;
       }
     }
     return false;
@@ -912,7 +1585,7 @@ export class CanvasDrawingEditor extends HTMLElement {
     if (previousState) {
       this.objects = previousState;
       this.selectedId = null;
-      this.selectedIds.clear();
+      this.clearSelection();
       this.renderCanvas();
       this.updateUI();
       this.dispatchChangeEvent();
@@ -928,7 +1601,7 @@ export class CanvasDrawingEditor extends HTMLElement {
     if (nextState) {
       this.objects = nextState;
       this.selectedId = null;
-      this.selectedIds.clear();
+      this.clearSelection();
       this.renderCanvas();
       this.updateUI();
       this.dispatchChangeEvent();
@@ -995,7 +1668,7 @@ export class CanvasDrawingEditor extends HTMLElement {
         const id = (item as HTMLElement).dataset.id;
         if (id) {
           this.selectedId = id;
-          this.selectedIds.clear();
+          this.clearSelection();
           this.renderCanvas();
           this.updateUI();
           this.renderLayerList();
@@ -1213,7 +1886,7 @@ export class CanvasDrawingEditor extends HTMLElement {
     // 移除原对象，添加组合
     this.objects = this.objects.filter(o => !ids.includes(o.id));
     this.objects.push(groupObj);
-    this.selectedIds.clear();
+    this.clearSelection();
     this.selectedId = groupObj.id;
     this.renderCanvas();
     this.updateUI();
@@ -1235,7 +1908,7 @@ export class CanvasDrawingEditor extends HTMLElement {
     this.objects = this.objects.filter(o => o.id !== this.selectedId);
     this.objects.push(...children);
     this.selectedId = null;
-    this.selectedIds.clear();
+    this.clearSelection();
     children.forEach(c => this.selectedIds.add(c.id));
     this.renderCanvas();
     this.updateUI();
@@ -1253,6 +1926,53 @@ export class CanvasDrawingEditor extends HTMLElement {
       return obj ? [obj] : [];
     }
     return [];
+  }
+
+  // 获取多选对象的整体边界
+  private getMultiSelectionBounds(): { x: number; y: number; width: number; height: number } | null {
+    if (this.selectedIds.size < 2) return null;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    this.selectedIds.forEach(id => {
+      const obj = this.objects.find(o => o.id === id);
+      if (obj) {
+        const bounds = this.getObjectBounds(obj);
+        minX = Math.min(minX, bounds.x);
+        minY = Math.min(minY, bounds.y);
+        maxX = Math.max(maxX, bounds.x + bounds.width);
+        maxY = Math.max(maxY, bounds.y + bounds.height);
+      }
+    });
+
+    if (minX === Infinity) return null;
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  }
+
+  // 获取多选变换原点（自定义或默认中心点）
+  private getMultiTransformOrigin(): Point | null {
+    if (this.selectedIds.size < 2) return null;
+
+    if (this.transformOrigin) {
+      return this.transformOrigin;
+    }
+
+    const bounds = this.getMultiSelectionBounds();
+    if (!bounds) return null;
+
+    return {
+      x: bounds.x + bounds.width / 2,
+      y: bounds.y + bounds.height / 2
+    };
+  }
+
+  // 检测是否点击了变换原点
+  private isPointOnTransformOrigin(x: number, y: number): boolean {
+    const origin = this.getMultiTransformOrigin();
+    if (!origin) return false;
+
+    const handleRadius = 10;
+    const dist = Math.sqrt(Math.pow(x - origin.x, 2) + Math.pow(y - origin.y, 2));
+    return dist <= handleRadius;
   }
 
   // 左对齐
@@ -1313,7 +2033,7 @@ export class CanvasDrawingEditor extends HTMLElement {
     } else if (this.selectedIds.size > 0) {
       this.saveHistory();
       this.objects = this.objects.filter(o => !this.selectedIds.has(o.id));
-      this.selectedIds.clear();
+      this.clearSelection();
       this.renderCanvas();
       this.updateUI();
       this.dispatchChangeEvent();
@@ -1358,7 +2078,7 @@ export class CanvasDrawingEditor extends HTMLElement {
   // 全选
   private selectAll(): void {
     this.selectedId = null;
-    this.selectedIds.clear();
+    this.clearSelection();
     this.objects.forEach(obj => {
       if (obj.visible !== false) {
         this.selectedIds.add(obj.id);
@@ -1366,6 +2086,12 @@ export class CanvasDrawingEditor extends HTMLElement {
     });
     this.renderCanvas();
     this.updateUI();
+  }
+
+  // 清除选择并重置变换原点
+  private clearSelection(): void {
+    this.selectedIds.clear();
+    this.transformOrigin = null;
   }
 
   // 派发变化事件
@@ -1485,11 +2211,25 @@ export class CanvasDrawingEditor extends HTMLElement {
           this.setTool('TEXT');
           break;
         case 'escape':
+          // 如果正在绘制贝塞尔曲线，取消绘制
+          if (this.tool === 'BEZIER' && this.bezierPoints.length > 0) {
+            this.bezierPoints = [];
+            this.isBezierDrawing = false;
+            this.bezierTempPoint = null;
+            this.renderCanvas();
+            break;
+          }
           this.selectedId = null;
-          this.selectedIds.clear();
+          this.clearSelection();
           this.hideTextInput();
           this.renderCanvas();
           this.updateUI();
+          break;
+        case 'enter':
+          // 如果正在绘制贝塞尔曲线，完成路径（不闭合）
+          if (this.tool === 'BEZIER' && this.bezierPoints.length >= 2) {
+            this.finishBezierPath(false);
+          }
           break;
       }
     }
@@ -1567,8 +2307,19 @@ export class CanvasDrawingEditor extends HTMLElement {
 
   // 设置工具
   private setTool(tool: ToolType): void {
+    // 如果正在绘制贝塞尔曲线且切换到其他工具，完成当前路径
+    if (this.tool === 'BEZIER' && tool !== 'BEZIER' && this.bezierPoints.length >= 2) {
+      this.finishBezierPath(false);
+    } else if (this.tool === 'BEZIER' && tool !== 'BEZIER') {
+      // 清理未完成的贝塞尔状态
+      this.bezierPoints = [];
+      this.isBezierDrawing = false;
+      this.bezierTempPoint = null;
+    }
+
     this.tool = tool;
     this.updateToolButtons();
+    this.renderCanvas();
   }
 
   // 更新工具按钮状态
@@ -1584,7 +2335,7 @@ export class CanvasDrawingEditor extends HTMLElement {
     });
 
     // 更新形状工具组的图标和选中状态
-    const shapeTools = ['RECTANGLE', 'CIRCLE', 'LINE', 'ARROW', 'POLYGON'];
+    const shapeTools = ['RECTANGLE', 'CIRCLE', 'TRIANGLE', 'STAR', 'HEART', 'DIAMOND', 'BEZIER', 'LINE', 'ARROW', 'DOUBLE_ARROW', 'POLYGON'];
     const shapesGroup = this.shadow.querySelector('.tool-group[data-group="shapes"]');
     if (shapesGroup) {
       const groupBtn = shapesGroup.querySelector('.tool-group-btn');
@@ -1602,6 +2353,55 @@ export class CanvasDrawingEditor extends HTMLElement {
         }
       }
     }
+
+    // 更新文本工具组的图标和选中状态
+    const textTools = ['TEXT', 'RICH_TEXT'];
+    const textGroup = this.shadow.querySelector('.tool-group[data-group="text"]');
+    if (textGroup) {
+      const groupBtn = textGroup.querySelector('.tool-group-btn');
+      if (groupBtn) {
+        const isTextTool = textTools.includes(this.tool);
+        if (isTextTool) {
+          // 更新图标为当前选择的文本类型
+          const svgIcon = groupBtn.querySelector('.icon');
+          if (svgIcon) {
+            svgIcon.innerHTML = this.getTextIconPath(this.tool);
+          }
+          groupBtn.classList.add('active');
+        } else {
+          groupBtn.classList.remove('active');
+        }
+      }
+    }
+
+    // 更新线条样式按钮的选中状态
+    this.shadow.querySelectorAll('.line-style-btn').forEach(btn => {
+      const style = btn.getAttribute('data-line-style');
+      if (style === this.lineStyle) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  // 获取文本工具的图标路径
+  private getTextIconPath(tool: ToolType): string {
+    switch (tool) {
+      case 'TEXT':
+        return `<polyline points="4 7 4 4 20 4 20 7"/>
+                <line x1="9" y1="20" x2="15" y2="20"/>
+                <line x1="12" y1="4" x2="12" y2="20"/>`;
+      case 'RICH_TEXT':
+        return `<path d="M4 7V4h16v3"/>
+                <path d="M9 20h6"/>
+                <path d="M12 4v16"/>
+                <path d="M7 12h4" stroke-width="3"/>`;
+      default:
+        return `<polyline points="4 7 4 4 20 4 20 7"/>
+                <line x1="9" y1="20" x2="15" y2="20"/>
+                <line x1="12" y1="4" x2="12" y2="20"/>`;
+    }
   }
 
   // 获取形状工具的图标路径
@@ -1611,10 +2411,22 @@ export class CanvasDrawingEditor extends HTMLElement {
         return '<rect x="3" y="3" width="18" height="18" rx="2"/>';
       case 'CIRCLE':
         return '<circle cx="12" cy="12" r="10"/>';
+      case 'TRIANGLE':
+        return '<polygon points="12 3 22 21 2 21"/>';
+      case 'STAR':
+        return '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>';
+      case 'HEART':
+        return '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>';
+      case 'DIAMOND':
+        return '<polygon points="12 2 22 12 12 22 2 12"/>';
+      case 'BEZIER':
+        return '<path d="M3 17c3-6 9-6 12 0s9 6 12 0"/><circle cx="3" cy="17" r="2"/><circle cx="21" cy="17" r="2"/>';
       case 'LINE':
         return '<line x1="5" y1="19" x2="19" y2="5"/>';
       case 'ARROW':
         return '<line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/>';
+      case 'DOUBLE_ARROW':
+        return '<line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/><polyline points="15 19 5 19 5 9"/>';
       case 'POLYGON':
         return '<polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/>';
       default:
@@ -1707,6 +2519,38 @@ export class CanvasDrawingEditor extends HTMLElement {
       // Ctrl 和 Shift 都支持多选
       const isMultiSelect = (e as MouseEvent).shiftKey || (e as MouseEvent).ctrlKey || (e as MouseEvent).metaKey;
 
+      // 检查是否点击旋转手柄
+      if (this.selectedId && !isMultiSelect) {
+        const selectedObj = this.objects.find(o => o.id === this.selectedId);
+        if (selectedObj && this.isPointOnRotateHandle(selectedObj, x, y)) {
+          this.saveHistory();
+          this.isRotating = true;
+          const bounds = this.getObjectBounds(selectedObj);
+          const centerX = bounds.x + bounds.width / 2;
+          const centerY = bounds.y + bounds.height / 2;
+          this.rotateStartAngle = Math.atan2(y - centerY, x - centerX);
+          this.rotateObjectStartRotation = selectedObj.rotation || 0;
+          return;
+        }
+      }
+
+      // 检查是否点击斜切手柄
+      if (this.selectedId && !isMultiSelect) {
+        const selectedObj = this.objects.find(o => o.id === this.selectedId);
+        if (selectedObj) {
+          const skewHandle = this.getSkewHandleAtPoint(selectedObj, x, y);
+          if (skewHandle) {
+            this.saveHistory();
+            this.isSkewing = true;
+            this.skewHandle = skewHandle;
+            this.skewStartPos = { x, y };
+            this.skewObjectStartSkewX = selectedObj.skewX || 0;
+            this.skewObjectStartSkewY = selectedObj.skewY || 0;
+            return;
+          }
+        }
+      }
+
       // 检查是否点击调整大小手柄
       if (this.selectedId && !isMultiSelect) {
         const selectedObj = this.objects.find(o => o.id === this.selectedId);
@@ -1719,6 +2563,53 @@ export class CanvasDrawingEditor extends HTMLElement {
             this.resizeStartBounds = this.getObjectBounds(selectedObj);
             this.resizeOriginalObject = JSON.parse(JSON.stringify(selectedObj));
             return;
+          }
+        }
+      }
+
+      // 检查是否点击了多选变换原点
+      if (this.selectedIds.size >= 2 && this.isPointOnTransformOrigin(x, y)) {
+        this.isDraggingOrigin = true;
+        return;
+      }
+
+      // 检查是否点击了多选边界外围（用于多选旋转）
+      if (this.selectedIds.size >= 2 && !isMultiSelect) {
+        const multiBounds = this.getMultiSelectionBounds();
+        if (multiBounds) {
+          const origin = this.getMultiTransformOrigin();
+          if (origin) {
+            // 检查是否在边界框外围但在旋转区域内
+            const expandedBounds = {
+              x: multiBounds.x - 20,
+              y: multiBounds.y - 40, // 上方留更多空间给旋转手柄
+              width: multiBounds.width + 40,
+              height: multiBounds.height + 60
+            };
+            const isInExpandedBounds = x >= expandedBounds.x && x <= expandedBounds.x + expandedBounds.width &&
+                                       y >= expandedBounds.y && y <= expandedBounds.y + expandedBounds.height;
+            const isInInnerBounds = x >= multiBounds.x - 5 && x <= multiBounds.x + multiBounds.width + 5 &&
+                                    y >= multiBounds.y - 5 && y <= multiBounds.y + multiBounds.height + 5;
+
+            // 点击在外围区域（边界框和扩展区域之间）
+            if (isInExpandedBounds && !isInInnerBounds) {
+              this.saveHistory();
+              this.isMultiRotating = true;
+              this.multiRotateStartAngle = Math.atan2(y - origin.y, x - origin.x);
+              // 保存所有选中对象的初始状态
+              this.multiRotateObjectsStart.clear();
+              this.selectedIds.forEach(id => {
+                const obj = this.objects.find(o => o.id === id);
+                if (obj) {
+                  this.multiRotateObjectsStart.set(id, {
+                    x: obj.x,
+                    y: obj.y,
+                    rotation: obj.rotation || 0
+                  });
+                }
+              });
+              return;
+            }
           }
         }
       }
@@ -1751,7 +2642,7 @@ export class CanvasDrawingEditor extends HTMLElement {
         } else {
           // 普通点击：单选
           this.selectedId = clickedObject.id;
-          this.selectedIds.clear();
+          this.clearSelection();
           this.dragOffset = { x: x - clickedObject.x, y: y - clickedObject.y };
           this.saveHistory();
         }
@@ -1768,7 +2659,7 @@ export class CanvasDrawingEditor extends HTMLElement {
           this.isSelecting = true;
           this.selectionRect = { x, y, width: 0, height: 0 };
           this.selectedId = null;
-          this.selectedIds.clear();
+          this.clearSelection();
         }
         this.updateUI();
       }
@@ -1777,27 +2668,215 @@ export class CanvasDrawingEditor extends HTMLElement {
       this.textInputPos = { x, y };
       this.showTextInput(screenPos.x, screenPos.y);
       this.isDragging = false;
+    } else if (this.tool === 'RICH_TEXT') {
+      // 显示富文本编辑器
+      this.showRichTextEditor(x, y);
+      this.isDragging = false;
     } else {
       // 开始绘制图形
       this.saveHistory();
       const id = this.generateId();
       if (this.tool === 'RECTANGLE') {
-        this.currentObject = { id, type: 'RECTANGLE', x, y, width: 0, height: 0, color: this.color, lineWidth: this.lineWidth };
+        this.currentObject = { id, type: 'RECTANGLE', x, y, width: 0, height: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle } as RectObject;
       } else if (this.tool === 'CIRCLE') {
-        this.currentObject = { id, type: 'CIRCLE', x, y, radius: 0, color: this.color, lineWidth: this.lineWidth };
+        this.currentObject = { id, type: 'CIRCLE', x, y, radius: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle } as CircleObject;
       } else if (this.tool === 'PENCIL') {
         this.currentObject = { id, type: 'PATH', x, y, points: [{ x, y }], color: this.color, lineWidth: this.lineWidth };
       } else if (this.tool === 'LINE') {
-        this.currentObject = { id, type: 'LINE', x, y, x2: x, y2: y, color: this.color, lineWidth: this.lineWidth } as LineObject;
+        this.currentObject = { id, type: 'LINE', x, y, x2: x, y2: y, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle } as LineObject;
       } else if (this.tool === 'ARROW') {
-        this.currentObject = { id, type: 'ARROW', x, y, x2: x, y2: y, color: this.color, lineWidth: this.lineWidth } as ArrowObject;
+        this.currentObject = { id, type: 'ARROW', x, y, x2: x, y2: y, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle, arrowType: 'single' } as ArrowObject;
+      } else if (this.tool === 'DOUBLE_ARROW') {
+        this.currentObject = { id, type: 'ARROW', x, y, x2: x, y2: y, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle, arrowType: 'double' } as ArrowObject;
       } else if (this.tool === 'POLYGON') {
         // 默认创建六边形
-        this.currentObject = { id, type: 'POLYGON', x, y, radius: 0, sides: 6, color: this.color, lineWidth: this.lineWidth } as PolygonObject;
+        this.currentObject = { id, type: 'POLYGON', x, y, radius: 0, sides: 6, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle } as PolygonObject;
+      } else if (this.tool === 'TRIANGLE') {
+        this.currentObject = { id, type: 'TRIANGLE', x, y, radius: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle } as TriangleObject;
+      } else if (this.tool === 'STAR') {
+        this.currentObject = { id, type: 'STAR', x, y, points: 5, outerRadius: 0, innerRadius: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle } as StarObject;
+      } else if (this.tool === 'HEART') {
+        this.currentObject = { id, type: 'HEART', x, y, size: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle } as HeartObject;
+      } else if (this.tool === 'DIAMOND') {
+        this.currentObject = { id, type: 'DIAMOND', x, y, width: 0, height: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle } as DiamondObject;
+      } else if (this.tool === 'BEZIER') {
+        // 贝塞尔曲线工具特殊处理
+        this.handleBezierClick(x, y);
+        return;
       }
     }
 
     this.renderCanvas();
+  }
+
+  // 处理贝塞尔曲线点击
+  private handleBezierClick(x: number, y: number): void {
+    const hitRadius = 8 / this.scale;
+
+    // 检查是否点击了现有点
+    for (let i = 0; i < this.bezierPoints.length; i++) {
+      const pt = this.bezierPoints[i];
+
+      // 检查是否点击了锚点
+      if (Math.hypot(x - pt.x, y - pt.y) < hitRadius) {
+        // 如果点击了第一个点且已有多个点，闭合路径
+        if (i === 0 && this.bezierPoints.length >= 3) {
+          this.finishBezierPath(true);
+          return;
+        }
+        // 否则开始拖拽这个点
+        this.bezierDraggingPoint = i;
+        this.bezierDraggingHandle = null;
+        return;
+      }
+
+      // 检查是否点击了控制柄1
+      if (pt.cp1x !== undefined && pt.cp1y !== undefined) {
+        if (Math.hypot(x - pt.cp1x, y - pt.cp1y) < hitRadius) {
+          this.bezierDraggingPoint = i;
+          this.bezierDraggingHandle = 'cp1';
+          return;
+        }
+      }
+
+      // 检查是否点击了控制柄2
+      if (pt.cp2x !== undefined && pt.cp2y !== undefined) {
+        if (Math.hypot(x - pt.cp2x, y - pt.cp2y) < hitRadius) {
+          this.bezierDraggingPoint = i;
+          this.bezierDraggingHandle = 'cp2';
+          return;
+        }
+      }
+    }
+
+    // 添加新点
+    const newPoint: BezierPoint = {
+      x, y,
+      type: 'smooth'
+    };
+
+    this.bezierPoints.push(newPoint);
+    this.isBezierDrawing = true;
+    this.bezierDraggingPoint = this.bezierPoints.length - 1;
+    this.bezierDraggingHandle = 'cp2';  // 拖拽出控制柄
+
+    this.renderCanvas();
+  }
+
+  // 完成贝塞尔曲线路径
+  private finishBezierPath(closed: boolean): void {
+    if (this.bezierPoints.length < 2) {
+      this.bezierPoints = [];
+      this.isBezierDrawing = false;
+      this.renderCanvas();
+      return;
+    }
+
+    this.saveHistory();
+
+    const bezierObj: BezierObject = {
+      id: this.generateId(),
+      type: 'BEZIER',
+      x: 0,
+      y: 0,
+      points: [...this.bezierPoints],
+      closed,
+      color: this.color,
+      lineWidth: this.lineWidth
+    };
+
+    this.objects.push(bezierObj);
+    this.bezierPoints = [];
+    this.isBezierDrawing = false;
+    this.bezierDraggingPoint = -1;
+    this.bezierDraggingHandle = null;
+
+    this.renderCanvas();
+    this.dispatchChangeEvent();
+  }
+
+  // 绘制贝塞尔曲线编辑状态
+  private drawBezierEditState(ctx: CanvasRenderingContext2D): void {
+    if (this.bezierPoints.length === 0) return;
+
+    const handleSize = 6 / this.scale;
+    const lineWidth = 1 / this.scale;
+
+    // 绘制曲线路径
+    ctx.beginPath();
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = this.lineWidth;
+
+    const firstPoint = this.bezierPoints[0];
+    ctx.moveTo(firstPoint.x, firstPoint.y);
+
+    for (let i = 1; i < this.bezierPoints.length; i++) {
+      const prevPoint = this.bezierPoints[i - 1];
+      const currPoint = this.bezierPoints[i];
+
+      const cp1x = prevPoint.cp2x ?? prevPoint.x;
+      const cp1y = prevPoint.cp2y ?? prevPoint.y;
+      const cp2x = currPoint.cp1x ?? currPoint.x;
+      const cp2y = currPoint.cp1y ?? currPoint.y;
+
+      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, currPoint.x, currPoint.y);
+    }
+
+    // 绘制到临时预览点
+    if (this.bezierTempPoint && this.bezierPoints.length > 0) {
+      const lastPoint = this.bezierPoints[this.bezierPoints.length - 1];
+      const cp1x = lastPoint.cp2x ?? lastPoint.x;
+      const cp1y = lastPoint.cp2y ?? lastPoint.y;
+      ctx.bezierCurveTo(cp1x, cp1y, this.bezierTempPoint.x, this.bezierTempPoint.y, this.bezierTempPoint.x, this.bezierTempPoint.y);
+    }
+
+    ctx.stroke();
+
+    // 绘制控制柄连线和控制点
+    ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
+    ctx.lineWidth = lineWidth;
+
+    this.bezierPoints.forEach((pt, index) => {
+      // 绘制控制柄连线
+      if (pt.cp1x !== undefined && pt.cp1y !== undefined) {
+        ctx.beginPath();
+        ctx.moveTo(pt.x, pt.y);
+        ctx.lineTo(pt.cp1x, pt.cp1y);
+        ctx.stroke();
+
+        // 绘制控制点
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(pt.cp1x, pt.cp1y, handleSize * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      if (pt.cp2x !== undefined && pt.cp2y !== undefined) {
+        ctx.beginPath();
+        ctx.moveTo(pt.x, pt.y);
+        ctx.lineTo(pt.cp2x, pt.cp2y);
+        ctx.stroke();
+
+        // 绘制控制点
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(pt.cp2x, pt.cp2y, handleSize * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // 绘制锚点
+      ctx.fillStyle = index === 0 ? '#ef4444' : '#3b82f6';  // 第一个点红色
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, handleSize, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2 / this.scale;
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
+      ctx.lineWidth = lineWidth;
+    });
   }
 
   // 画布鼠标移动
@@ -1813,16 +2892,161 @@ export class CanvasDrawingEditor extends HTMLElement {
       return;
     }
 
-    if (!this.isDragging || !this.dragStart) return;
     const { x, y } = this.getMousePos(e);
+
+    // 处理贝塞尔曲线拖拽
+    if (this.tool === 'BEZIER' && this.bezierDraggingPoint >= 0) {
+      const pt = this.bezierPoints[this.bezierDraggingPoint];
+      if (pt) {
+        if (this.bezierDraggingHandle === 'cp1') {
+          pt.cp1x = x;
+          pt.cp1y = y;
+          // 对称模式：同步更新 cp2
+          if (pt.type === 'symmetric' && pt.cp2x !== undefined && pt.cp2y !== undefined) {
+            pt.cp2x = 2 * pt.x - x;
+            pt.cp2y = 2 * pt.y - y;
+          }
+        } else if (this.bezierDraggingHandle === 'cp2') {
+          pt.cp2x = x;
+          pt.cp2y = y;
+          // 对称模式：同步更新 cp1
+          if (pt.type === 'symmetric' && pt.cp1x !== undefined && pt.cp1y !== undefined) {
+            pt.cp1x = 2 * pt.x - x;
+            pt.cp1y = 2 * pt.y - y;
+          }
+          // 如果是新点，同时设置 cp1 为对称位置
+          if (pt.cp1x === undefined) {
+            pt.cp1x = 2 * pt.x - x;
+            pt.cp1y = 2 * pt.y - y;
+            pt.type = 'symmetric';
+          }
+        } else {
+          // 拖拽锚点本身
+          const dx = x - pt.x;
+          const dy = y - pt.y;
+          pt.x = x;
+          pt.y = y;
+          // 同时移动控制柄
+          if (pt.cp1x !== undefined) pt.cp1x += dx;
+          if (pt.cp1y !== undefined) pt.cp1y += dy;
+          if (pt.cp2x !== undefined) pt.cp2x += dx;
+          if (pt.cp2y !== undefined) pt.cp2y += dy;
+        }
+        this.renderCanvas();
+      }
+      return;
+    }
+
+    // 贝塞尔曲线预览
+    if (this.tool === 'BEZIER' && this.bezierPoints.length > 0) {
+      this.bezierTempPoint = { x, y, type: 'smooth' };
+      this.renderCanvas();
+      return;
+    }
+
+    if (!this.isDragging || !this.dragStart) return;
+
+    // 处理旋转
+    if (this.isRotating && this.selectedId) {
+      const obj = this.objects.find(o => o.id === this.selectedId);
+      if (obj) {
+        const bounds = this.getObjectBounds(obj);
+        const centerX = bounds.x + bounds.width / 2;
+        const centerY = bounds.y + bounds.height / 2;
+        const currentAngle = Math.atan2(y - centerY, x - centerX);
+        const deltaAngle = currentAngle - this.rotateStartAngle;
+        obj.rotation = this.rotateObjectStartRotation + deltaAngle;
+        this.renderCanvas();
+      }
+      return;
+    }
+
+    // 处理斜切
+    if (this.isSkewing && this.selectedId && this.skewHandle) {
+      const obj = this.objects.find(o => o.id === this.selectedId);
+      if (obj) {
+        const bounds = this.getObjectBounds(obj);
+        const dx = x - this.skewStartPos.x;
+        const dy = y - this.skewStartPos.y;
+
+        // 斜切灵敏度
+        const sensitivity = 0.002;
+
+        if (this.skewHandle === 'top' || this.skewHandle === 'bottom') {
+          // 水平斜切（上下边缘拖拽）
+          const direction = this.skewHandle === 'top' ? -1 : 1;
+          obj.skewX = this.skewObjectStartSkewX + dx * sensitivity * direction;
+          // 限制斜切范围
+          obj.skewX = Math.max(-1, Math.min(1, obj.skewX));
+        } else {
+          // 垂直斜切（左右边缘拖拽）
+          const direction = this.skewHandle === 'left' ? -1 : 1;
+          obj.skewY = this.skewObjectStartSkewY + dy * sensitivity * direction;
+          // 限制斜切范围
+          obj.skewY = Math.max(-1, Math.min(1, obj.skewY));
+        }
+        this.renderCanvas();
+      }
+      return;
+    }
+
+    // 处理变换原点拖拽
+    if (this.isDraggingOrigin) {
+      this.transformOrigin = { x, y };
+      this.renderCanvas();
+      return;
+    }
+
+    // 处理多选旋转
+    if (this.isMultiRotating && this.selectedIds.size >= 2) {
+      const origin = this.getMultiTransformOrigin();
+      if (origin) {
+        const currentAngle = Math.atan2(y - origin.y, x - origin.x);
+        const deltaAngle = currentAngle - this.multiRotateStartAngle;
+
+        this.selectedIds.forEach(id => {
+          const obj = this.objects.find(o => o.id === id);
+          const startState = this.multiRotateObjectsStart.get(id);
+          if (obj && startState) {
+            // 更新对象自身的旋转
+            obj.rotation = startState.rotation + deltaAngle;
+
+            // 围绕变换原点旋转对象位置
+            const dx = startState.x - origin.x;
+            const dy = startState.y - origin.y;
+            const cos = Math.cos(deltaAngle);
+            const sin = Math.sin(deltaAngle);
+            obj.x = origin.x + dx * cos - dy * sin;
+            obj.y = origin.y + dx * sin + dy * cos;
+          }
+        });
+
+        this.renderCanvas();
+      }
+      return;
+    }
 
     // 处理调整大小
     if (this.isResizing && this.selectedId && this.resizeHandle && this.resizeStartBounds && this.resizeOriginalObject) {
       const obj = this.objects.find(o => o.id === this.selectedId);
       if (!obj) return;
 
-      const dx = x - this.dragStart.x;
-      const dy = y - this.dragStart.y;
+      // 检测 Shift 键是否按下（用于等比缩放）
+      const shiftKey = e instanceof MouseEvent ? e.shiftKey : false;
+
+      let dx = x - this.dragStart.x;
+      let dy = y - this.dragStart.y;
+
+      // 如果对象有旋转，将鼠标移动方向转换到对象本地坐标系
+      if (obj.rotation) {
+        const cos = Math.cos(-obj.rotation);
+        const sin = Math.sin(-obj.rotation);
+        const rotatedDx = dx * cos - dy * sin;
+        const rotatedDy = dx * sin + dy * cos;
+        dx = rotatedDx;
+        dy = rotatedDy;
+      }
+
       let newX = this.resizeStartBounds.x;
       let newY = this.resizeStartBounds.y;
       let newWidth = this.resizeStartBounds.width;
@@ -1837,6 +3061,28 @@ export class CanvasDrawingEditor extends HTMLElement {
       if (this.resizeHandle.includes('n')) {
         newY = this.resizeStartBounds.y + dy;
         newHeight = this.resizeStartBounds.height - dy;
+      }
+
+      // 等比缩放锁定：按住 Shift 键时保持宽高比
+      if (shiftKey && this.resizeStartBounds.width > 0 && this.resizeStartBounds.height > 0) {
+        const aspectRatio = this.resizeStartBounds.width / this.resizeStartBounds.height;
+        const currentRatio = newWidth / newHeight;
+
+        if (currentRatio > aspectRatio) {
+          // 宽度变化更大，以宽度为准调整高度
+          const adjustedHeight = newWidth / aspectRatio;
+          if (this.resizeHandle.includes('n')) {
+            newY = this.resizeStartBounds.y + this.resizeStartBounds.height - adjustedHeight;
+          }
+          newHeight = adjustedHeight;
+        } else {
+          // 高度变化更大，以高度为准调整宽度
+          const adjustedWidth = newHeight * aspectRatio;
+          if (this.resizeHandle.includes('w')) {
+            newX = this.resizeStartBounds.x + this.resizeStartBounds.width - adjustedWidth;
+          }
+          newWidth = adjustedWidth;
+        }
       }
 
       newWidth = Math.max(10, newWidth);
@@ -1864,6 +3110,20 @@ export class CanvasDrawingEditor extends HTMLElement {
           (obj as TextObject).x = newX;
           (obj as TextObject).y = newY + newHeight;
           (obj as TextObject).fontSize = Math.max(8, Math.round(origT.fontSize * scaleFactor));
+          break;
+        }
+        case 'RICH_TEXT': {
+          const origRT = this.resizeOriginalObject as RichTextObject;
+          const scaleFactor = newWidth / this.resizeStartBounds.width;
+          const rtObj = obj as RichTextObject;
+          rtObj.x = newX;
+          rtObj.y = newY + newHeight;
+          rtObj.fontSize = Math.max(8, Math.round(origRT.fontSize * scaleFactor));
+          // 按比例调整每个段落的字体大小
+          rtObj.segments = origRT.segments.map((seg, i) => ({
+            ...seg,
+            fontSize: seg.fontSize ? Math.max(8, Math.round(seg.fontSize * scaleFactor)) : undefined
+          }));
           break;
         }
         case 'PATH': {
@@ -1954,6 +3214,21 @@ export class CanvasDrawingEditor extends HTMLElement {
       } else if (this.currentObject.type === 'POLYGON') {
         const radius = Math.sqrt(Math.pow(x - this.currentObject.x, 2) + Math.pow(y - this.currentObject.y, 2));
         (this.currentObject as PolygonObject).radius = radius;
+      } else if (this.currentObject.type === 'TRIANGLE') {
+        const radius = Math.sqrt(Math.pow(x - this.currentObject.x, 2) + Math.pow(y - this.currentObject.y, 2));
+        (this.currentObject as TriangleObject).radius = radius;
+      } else if (this.currentObject.type === 'STAR') {
+        const outerRadius = Math.sqrt(Math.pow(x - this.currentObject.x, 2) + Math.pow(y - this.currentObject.y, 2));
+        (this.currentObject as StarObject).outerRadius = outerRadius;
+        (this.currentObject as StarObject).innerRadius = outerRadius * 0.4; // 内半径为外半径的40%
+      } else if (this.currentObject.type === 'HEART') {
+        const size = Math.sqrt(Math.pow(x - this.currentObject.x, 2) + Math.pow(y - this.currentObject.y, 2));
+        (this.currentObject as HeartObject).size = size;
+      } else if (this.currentObject.type === 'DIAMOND') {
+        const width = Math.abs(x - this.currentObject.x) * 2;
+        const height = Math.abs(y - this.currentObject.y) * 2;
+        (this.currentObject as DiamondObject).width = width;
+        (this.currentObject as DiamondObject).height = height;
       }
       this.renderCanvas();
     }
@@ -1961,11 +3236,18 @@ export class CanvasDrawingEditor extends HTMLElement {
 
   // 画布鼠标抬起
   private handleCanvasPointerUp(): void {
+    // 结束贝塞尔曲线拖拽
+    if (this.tool === 'BEZIER' && this.bezierDraggingPoint >= 0) {
+      this.bezierDraggingPoint = -1;
+      this.bezierDraggingHandle = null;
+      return;
+    }
+
     // 结束框选
     if (this.isSelecting && this.selectionRect) {
       const rect = this.normalizeRect(this.selectionRect);
       // 选中框内的所有对象
-      this.selectedIds.clear();
+      this.clearSelection();
       this.objects.forEach(obj => {
         if (obj.visible === false) return;
         const bounds = this.getObjectBounds(obj);
@@ -1984,8 +3266,14 @@ export class CanvasDrawingEditor extends HTMLElement {
     this.resizeHandle = null;
     this.resizeStartBounds = null;
     this.resizeOriginalObject = null;
+    this.isRotating = false;
+    this.isSkewing = false;
+    this.skewHandle = null;
     this.isPanning = false;
     this.isMultiDragging = false;
+    this.isDraggingOrigin = false;
+    this.isMultiRotating = false;
+    this.multiRotateObjectsStart.clear();
 
     // 恢复光标
     if (this.isSpacePressed) {
@@ -2026,15 +3314,915 @@ export class CanvasDrawingEditor extends HTMLElement {
 
     const clickedObject = [...this.objects].reverse().find(obj => this.isHit(obj, x, y));
 
-    if (clickedObject && clickedObject.type === 'TEXT') {
-      const textObj = clickedObject as TextObject;
-      this.editingTextId = textObj.id;
-      this.textInputPos = { x: textObj.x, y: textObj.y };
-      const screenX = textObj.x * this.scale + this.panOffset.x;
-      const screenY = textObj.y * this.scale + this.panOffset.y;
-      this.showTextInput(screenX, screenY, textObj.text);
-      this.setTool('SELECT');
+    if (clickedObject) {
+      if (clickedObject.type === 'TEXT') {
+        const textObj = clickedObject as TextObject;
+        this.editingTextId = textObj.id;
+        this.textInputPos = { x: textObj.x, y: textObj.y };
+        const screenX = textObj.x * this.scale + this.panOffset.x;
+        const screenY = textObj.y * this.scale + this.panOffset.y;
+        this.showTextInput(screenX, screenY, textObj.text);
+        this.setTool('SELECT');
+      } else if (clickedObject.type === 'RICH_TEXT') {
+        // 双击编辑富文本
+        const rtObj = clickedObject as RichTextObject;
+        this.showRichTextEditor(rtObj.x, rtObj.y, rtObj);
+        this.setTool('SELECT');
+      }
     }
+  }
+
+  // ========== 公开 API 方法 ==========
+
+  // 导出画布数据为 JSON 对象
+  public exportJSON(): { version: string; objects: any[] } {
+    return {
+      version: '1.0',
+      objects: this.objects.map(obj => {
+        const { imageElement, ...rest } = obj as ImageObject;
+        return rest;
+      })
+    };
+  }
+
+  // 导出画布为 PNG 图片
+  public exportPNG(filename: string = 'canvas-export.png'): void {
+    if (!this.canvas) return;
+
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = this.canvas.toDataURL('image/png');
+    link.click();
+  }
+
+  // ========== Tween动画系统方法 ==========
+
+  // 创建动画 (使用 tweenAnimate 避免与 HTMLElement.animate 冲突)
+  public tweenAnimate(objectId: string, toProps: TweenProps, config: TweenConfig = {}): string {
+    const obj = this.objects.find(o => o.id === objectId);
+    if (!obj) {
+      console.error(`Object with id ${objectId} not found`);
+      return '';
+    }
+
+    // 获取当前属性作为起始值
+    const fromProps: TweenProps = {};
+    for (const key of Object.keys(toProps)) {
+      if (key in obj) {
+        fromProps[key] = (obj as any)[key];
+      }
+    }
+
+    // 解析缓动函数
+    let easingFn: EasingFunction = Easing.linear;
+    if (config.easing) {
+      if (typeof config.easing === 'function') {
+        easingFn = config.easing;
+      } else if (config.easing in Easing) {
+        easingFn = Easing[config.easing];
+      }
+    }
+
+    const tweenId = `tween_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const tween: TweenInstance = {
+      id: tweenId,
+      objectId,
+      fromProps,
+      toProps,
+      config: {
+        duration: config.duration || 1000,
+        delay: config.delay || 0,
+        easing: easingFn,
+        repeat: config.repeat || 0,
+        yoyo: config.yoyo || false,
+        onStart: config.onStart,
+        onUpdate: config.onUpdate,
+        onComplete: config.onComplete
+      },
+      startTime: performance.now() + (config.delay || 0),
+      currentRepeat: 0,
+      isReversed: false,
+      isStarted: false,
+      isCompleted: false
+    };
+
+    this.tweens.set(tweenId, tween);
+    this.startAnimationLoop();
+    return tweenId;
+  }
+
+  // 停止指定动画
+  public stopAnimation(tweenId: string): void {
+    this.tweens.delete(tweenId);
+    if (this.tweens.size === 0) {
+      this.stopAnimationLoop();
+    }
+  }
+
+  // 停止对象的所有动画
+  public stopObjectAnimations(objectId: string): void {
+    for (const [id, tween] of this.tweens) {
+      if (tween.objectId === objectId) {
+        this.tweens.delete(id);
+      }
+    }
+    if (this.tweens.size === 0) {
+      this.stopAnimationLoop();
+    }
+  }
+
+  // 停止所有动画
+  public stopAllAnimations(): void {
+    this.tweens.clear();
+    this.stopAnimationLoop();
+  }
+
+  // 启动动画循环
+  private startAnimationLoop(): void {
+    if (this.isAnimating) return;
+    this.isAnimating = true;
+    this.animationLoop();
+  }
+
+  // 停止动画循环
+  private stopAnimationLoop(): void {
+    this.isAnimating = false;
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+  }
+
+  // 动画循环
+  private animationLoop = (): void => {
+    if (!this.isAnimating) return;
+
+    const now = performance.now();
+    let hasActiveTweens = false;
+    const completedTweens: string[] = [];
+
+    for (const [id, tween] of this.tweens) {
+      if (tween.isCompleted) continue;
+
+      // 检查是否还在延迟阶段
+      if (now < tween.startTime) {
+        hasActiveTweens = true;
+        continue;
+      }
+
+      // 触发开始回调
+      if (!tween.isStarted) {
+        tween.isStarted = true;
+        tween.config.onStart?.();
+      }
+
+      const elapsed = now - tween.startTime;
+      let progress = Math.min(1, elapsed / tween.config.duration);
+
+      // 应用缓动
+      let easedProgress = (tween.config.easing as EasingFunction)(progress);
+
+      // yoyo模式处理
+      if (tween.isReversed) {
+        easedProgress = 1 - easedProgress;
+      }
+
+      // 更新对象属性
+      const obj = this.objects.find(o => o.id === tween.objectId);
+      if (obj) {
+        for (const key of Object.keys(tween.toProps)) {
+          const from = tween.fromProps[key] ?? 0;
+          const to = tween.toProps[key] ?? 0;
+          (obj as any)[key] = from + (to - from) * easedProgress;
+        }
+      }
+
+      // 触发更新回调
+      tween.config.onUpdate?.(progress);
+
+      // 检查动画是否完成
+      if (progress >= 1) {
+        if (tween.config.repeat === -1 || tween.currentRepeat < tween.config.repeat) {
+          // 需要重复
+          tween.currentRepeat++;
+          tween.startTime = now;
+          if (tween.config.yoyo) {
+            tween.isReversed = !tween.isReversed;
+          }
+          hasActiveTweens = true;
+        } else {
+          // 动画完成
+          tween.isCompleted = true;
+          tween.config.onComplete?.();
+          completedTweens.push(id);
+        }
+      } else {
+        hasActiveTweens = true;
+      }
+    }
+
+    // 清理完成的动画
+    for (const id of completedTweens) {
+      this.tweens.delete(id);
+    }
+
+    // 渲染画布
+    this.renderCanvas();
+
+    // 继续循环
+    if (hasActiveTweens || this.tweens.size > 0) {
+      this.animationFrameId = requestAnimationFrame(this.animationLoop);
+    } else {
+      this.stopAnimationLoop();
+    }
+  }
+
+  // ========== 触摸手势处理方法 ==========
+
+  // 处理触摸开始
+  private handleTouchStart(e: TouchEvent): void {
+    e.preventDefault();
+    const rect = this.canvas.getBoundingClientRect();
+    const now = performance.now();
+
+    // 清除惯性动画
+    if (this.inertiaAnimationId !== null) {
+      cancelAnimationFrame(this.inertiaAnimationId);
+      this.inertiaAnimationId = null;
+    }
+
+    // 记录所有触摸点
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      this.touchState.touches.set(touch.identifier, {
+        id: touch.identifier,
+        x, y,
+        startX: x,
+        startY: y,
+        timestamp: now
+      });
+    }
+
+    const touchCount = this.touchState.touches.size;
+
+    if (touchCount === 1) {
+      // 单指触摸 - 启动长按检测
+      this.touchState.gestureType = 'none';
+      this.touchState.longPressTimer = window.setTimeout(() => {
+        if (this.touchState.touches.size === 1 && this.touchState.gestureType === 'none') {
+          this.touchState.gestureType = 'longPress';
+          this.handleLongPress();
+        }
+      }, this.LONG_PRESS_DURATION);
+
+      // 转发为鼠标事件进行普通处理
+      const touch = e.touches[0];
+      const fakeEvent = this.createFakeMouseEvent(touch, rect);
+      this.handleCanvasPointerDown(fakeEvent);
+
+    } else if (touchCount === 2) {
+      // 双指触摸 - 初始化捏合/旋转手势
+      this.clearLongPressTimer();
+      const touches = Array.from(this.touchState.touches.values());
+      this.touchState.initialDistance = this.getDistance(touches[0], touches[1]);
+      this.touchState.initialAngle = this.getAngle(touches[0], touches[1]);
+      this.touchState.initialScale = this.scale;
+      this.touchState.initialRotation = this.selectedId ?
+        (this.objects.find(o => o.id === this.selectedId)?.rotation || 0) : 0;
+      this.touchState.gestureType = 'pinch';
+    }
+  }
+
+  // 处理触摸移动
+  private handleTouchMove(e: TouchEvent): void {
+    e.preventDefault();
+    const rect = this.canvas.getBoundingClientRect();
+    const now = performance.now();
+
+    // 更新触摸点位置
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      const existing = this.touchState.touches.get(touch.identifier);
+      if (existing) {
+        const prevX = existing.x;
+        const prevY = existing.y;
+        existing.x = touch.clientX - rect.left;
+        existing.y = touch.clientY - rect.top;
+        // 计算速度（用于惯性）
+        const dt = (now - existing.timestamp) / 1000;
+        if (dt > 0) {
+          this.touchState.velocity = {
+            x: (existing.x - prevX) / dt,
+            y: (existing.y - prevY) / dt
+          };
+        }
+        existing.timestamp = now;
+      }
+    }
+
+    const touchCount = this.touchState.touches.size;
+
+    if (touchCount === 1) {
+      // 单指拖动
+      const touch = e.touches[0];
+      const touchPoint = this.touchState.touches.get(touch.identifier);
+      if (touchPoint) {
+        const dx = Math.abs(touchPoint.x - touchPoint.startX);
+        const dy = Math.abs(touchPoint.y - touchPoint.startY);
+        // 移动超过阈值，取消长按检测
+        if (dx > 10 || dy > 10) {
+          this.clearLongPressTimer();
+          this.touchState.gestureType = 'drag';
+        }
+      }
+      // 转发为鼠标事件
+      const fakeEvent = this.createFakeMouseEvent(touch, rect);
+      this.handleCanvasPointerMove(fakeEvent);
+
+    } else if (touchCount === 2 && this.touchState.gestureType === 'pinch') {
+      // 双指手势处理
+      const touches = Array.from(this.touchState.touches.values());
+      const currentDistance = this.getDistance(touches[0], touches[1]);
+      const currentAngle = this.getAngle(touches[0], touches[1]);
+
+      // 计算缩放比例
+      const scaleDelta = currentDistance / this.touchState.initialDistance;
+      // 计算旋转角度
+      const angleDelta = currentAngle - this.touchState.initialAngle;
+
+      // 计算双指中心点
+      const centerX = (touches[0].x + touches[1].x) / 2;
+      const centerY = (touches[0].y + touches[1].y) / 2;
+
+      if (this.selectedId && this.tool === 'SELECT') {
+        // 缩放/旋转选中的对象
+        const obj = this.objects.find(o => o.id === this.selectedId);
+        if (obj) {
+          // 应用旋转
+          obj.rotation = this.touchState.initialRotation + angleDelta * (180 / Math.PI);
+          this.renderCanvas();
+        }
+      } else {
+        // 缩放画布
+        const newScale = Math.max(0.1, Math.min(5, this.touchState.initialScale * scaleDelta));
+        this.scale = newScale;
+        this.renderCanvas();
+        this.updateZoomDisplay();
+      }
+    }
+  }
+
+  // 处理触摸结束
+  private handleTouchEnd(e: TouchEvent): void {
+    e.preventDefault();
+    this.clearLongPressTimer();
+
+    // 移除结束的触摸点
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      this.touchState.touches.delete(touch.identifier);
+    }
+
+    // 如果所有触摸都结束
+    if (this.touchState.touches.size === 0) {
+      // 应用惯性滑动（如果是拖动手势）
+      if (this.touchState.gestureType === 'drag' && !this.selectedId) {
+        this.applyInertia();
+      }
+
+      // 重置状态
+      this.touchState.gestureType = 'none';
+      this.handleCanvasPointerUp();
+    }
+  }
+
+  // 处理长按
+  private handleLongPress(): void {
+    const touches = Array.from(this.touchState.touches.values());
+    if (touches.length === 1) {
+      const touch = touches[0];
+      const { x, y } = this.screenToCanvas(touch.x, touch.y);
+
+      // 查找被点击的对象
+      for (let i = this.objects.length - 1; i >= 0; i--) {
+        const obj = this.objects[i];
+        if (this.isHit(obj, x, y)) {
+          // 选中对象
+          this.selectedId = obj.id;
+          this.selectedIds.clear();
+          this.selectedIds.add(obj.id);
+          this.renderCanvas();
+
+          // 触发选中事件
+          this.dispatchEvent(new CustomEvent('object-selected', {
+            detail: { object: obj, longPress: true }
+          }));
+          break;
+        }
+      }
+    }
+  }
+
+  // 应用惯性滑动
+  private applyInertia(): void {
+    const friction = 0.95;
+    const minVelocity = 0.5;
+    let { x: vx, y: vy } = this.touchState.velocity;
+
+    const animate = () => {
+      if (Math.abs(vx) < minVelocity && Math.abs(vy) < minVelocity) {
+        this.inertiaAnimationId = null;
+        return;
+      }
+
+      this.panOffset.x += vx * 0.016; // 假设 60fps
+      this.panOffset.y += vy * 0.016;
+      vx *= friction;
+      vy *= friction;
+
+      this.renderCanvas();
+      this.inertiaAnimationId = requestAnimationFrame(animate);
+    };
+
+    this.inertiaAnimationId = requestAnimationFrame(animate);
+  }
+
+  // 清除长按定时器
+  private clearLongPressTimer(): void {
+    if (this.touchState.longPressTimer !== null) {
+      clearTimeout(this.touchState.longPressTimer);
+      this.touchState.longPressTimer = null;
+    }
+  }
+
+  // 计算两点之间的距离
+  private getDistance(p1: TouchPoint, p2: TouchPoint): number {
+    return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+  }
+
+  // 计算两点之间的角度
+  private getAngle(p1: TouchPoint, p2: TouchPoint): number {
+    return Math.atan2(p2.y - p1.y, p2.x - p1.x);
+  }
+
+  // 创建模拟鼠标事件
+  private createFakeMouseEvent(touch: Touch, rect: DOMRect): MouseEvent {
+    return {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      offsetX: touch.clientX - rect.left,
+      offsetY: touch.clientY - rect.top,
+      button: 0,
+      preventDefault: () => {},
+      stopPropagation: () => {}
+    } as unknown as MouseEvent;
+  }
+
+  // ========== 富文本编辑器方法 ==========
+
+  // 绑定富文本编辑器事件
+  private bindRichTextEditorEvents(): void {
+    // 工具栏按钮事件
+    this.richTextEditor.querySelectorAll('.rich-text-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const action = (e.currentTarget as HTMLElement).dataset.action;
+        this.handleRichTextToolbarAction(action || '');
+      });
+    });
+
+    // 颜色选择
+    const colorInput = this.richTextEditor.querySelector('.rich-text-color') as HTMLInputElement;
+    colorInput?.addEventListener('input', () => {
+      if (this.selectedSegmentIndex >= 0 && this.richTextSegments[this.selectedSegmentIndex]) {
+        this.richTextSegments[this.selectedSegmentIndex].color = colorInput.value;
+        this.updateRichTextSegmentsUI();
+      }
+    });
+
+    // 字号选择
+    const fontSizeInput = this.richTextEditor.querySelector('.rich-text-fontsize') as HTMLInputElement;
+    fontSizeInput?.addEventListener('change', () => {
+      if (this.selectedSegmentIndex >= 0 && this.richTextSegments[this.selectedSegmentIndex]) {
+        this.richTextSegments[this.selectedSegmentIndex].fontSize = parseInt(fontSizeInput.value) || 16;
+        this.updateRichTextSegmentsUI();
+      }
+    });
+
+    // 取消按钮
+    this.richTextEditor.querySelector('.rich-text-action-btn.cancel')?.addEventListener('click', () => {
+      this.hideRichTextEditor();
+    });
+
+    // 确定按钮
+    this.richTextEditor.querySelector('.rich-text-action-btn.confirm')?.addEventListener('click', () => {
+      this.confirmRichText();
+    });
+  }
+
+  // 处理富文本工具栏操作
+  private handleRichTextToolbarAction(action: string): void {
+    if (this.selectedSegmentIndex < 0 || !this.richTextSegments[this.selectedSegmentIndex]) {
+      if (action === 'add-segment') {
+        this.addRichTextSegment();
+      }
+      return;
+    }
+
+    const segment = this.richTextSegments[this.selectedSegmentIndex];
+    switch (action) {
+      case 'bold':
+        segment.bold = !segment.bold;
+        break;
+      case 'italic':
+        segment.italic = !segment.italic;
+        break;
+      case 'add-segment':
+        this.addRichTextSegment();
+        break;
+    }
+    this.updateRichTextSegmentsUI();
+    this.updateRichTextToolbarState();
+  }
+
+  // 添加富文本段落
+  private addRichTextSegment(): void {
+    const newSegment: RichTextSegment = {
+      text: '',
+      color: '#000000',
+      fontSize: 16,
+      bold: false,
+      italic: false
+    };
+    this.richTextSegments.push(newSegment);
+    this.selectedSegmentIndex = this.richTextSegments.length - 1;
+    this.updateRichTextSegmentsUI();
+    this.updateRichTextToolbarState();
+  }
+
+  // 删除富文本段落
+  private deleteRichTextSegment(index: number): void {
+    if (this.richTextSegments.length <= 1) return;
+    this.richTextSegments.splice(index, 1);
+    if (this.selectedSegmentIndex >= this.richTextSegments.length) {
+      this.selectedSegmentIndex = this.richTextSegments.length - 1;
+    }
+    this.updateRichTextSegmentsUI();
+  }
+
+  // 更新富文本段落UI
+  private updateRichTextSegmentsUI(): void {
+    const container = this.richTextEditor.querySelector('.rich-text-segments');
+    if (!container) return;
+
+    container.innerHTML = this.richTextSegments.map((seg, idx) => `
+      <div class="rich-text-segment ${idx === this.selectedSegmentIndex ? 'selected' : ''}" data-index="${idx}">
+        <input type="text" class="rich-text-segment-input" value="${this.escapeHtml(seg.text)}" data-index="${idx}" placeholder="${this.t('richTextPlaceholder') || '请输入文字'}">
+        <span class="rich-text-segment-preview" style="
+          color: ${seg.color || '#000000'};
+          font-weight: ${seg.bold ? 'bold' : 'normal'};
+          font-style: ${seg.italic ? 'italic' : 'normal'};
+          font-size: ${Math.min(seg.fontSize || 16, 14)}px;
+        ">${seg.bold ? 'B' : ''}${seg.italic ? 'I' : ''} ${seg.fontSize || 16}px</span>
+        <button class="rich-text-segment-delete" data-index="${idx}" ${this.richTextSegments.length <= 1 ? 'disabled' : ''}>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    `).join('');
+
+    // 绑定输入事件 - 先绑定输入框事件，阻止冒泡
+    container.querySelectorAll('.rich-text-segment-input').forEach(input => {
+      // 阻止点击事件冒泡，避免触发父级点击导致UI重建
+      input.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+      // 阻止mousedown冒泡，防止失焦
+      input.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+      });
+      // 聚焦时选中当前段落，但不重建UI
+      input.addEventListener('focus', (e) => {
+        const idx = parseInt((e.target as HTMLElement).dataset.index || '0');
+        if (this.selectedSegmentIndex !== idx) {
+          this.selectedSegmentIndex = idx;
+          // 只更新选中状态的样式，不重建整个UI
+          container.querySelectorAll('.rich-text-segment').forEach((seg, i) => {
+            seg.classList.toggle('selected', i === idx);
+          });
+          this.updateRichTextToolbarState();
+        }
+      });
+      // 输入时更新数据
+      input.addEventListener('input', (e) => {
+        const idx = parseInt((e.target as HTMLElement).dataset.index || '0');
+        this.richTextSegments[idx].text = (e.target as HTMLInputElement).value;
+      });
+    });
+
+    // 绑定段落事件 - 点击段落非输入框区域时选中
+    container.querySelectorAll('.rich-text-segment').forEach(el => {
+      el.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        // 如果点击的是输入框或删除按钮，不处理
+        if (target.closest('.rich-text-segment-input') || target.closest('.rich-text-segment-delete')) return;
+        const index = parseInt((el as HTMLElement).dataset.index || '0');
+        if (this.selectedSegmentIndex !== index) {
+          this.selectedSegmentIndex = index;
+          // 只更新选中状态的样式，不重建整个UI
+          container.querySelectorAll('.rich-text-segment').forEach((seg, i) => {
+            seg.classList.toggle('selected', i === index);
+          });
+          this.updateRichTextToolbarState();
+        }
+      });
+    });
+
+    // 绑定删除事件
+    container.querySelectorAll('.rich-text-segment-delete').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = parseInt((e.currentTarget as HTMLElement).dataset.index || '0');
+        this.deleteRichTextSegment(idx);
+      });
+    });
+  }
+
+  // 更新工具栏状态
+  private updateRichTextToolbarState(): void {
+    if (this.selectedSegmentIndex < 0 || !this.richTextSegments[this.selectedSegmentIndex]) return;
+
+    const segment = this.richTextSegments[this.selectedSegmentIndex];
+
+    // 更新按钮状态
+    this.richTextEditor.querySelector('.rich-text-btn[data-action="bold"]')?.classList.toggle('active', !!segment.bold);
+    this.richTextEditor.querySelector('.rich-text-btn[data-action="italic"]')?.classList.toggle('active', !!segment.italic);
+
+    // 更新颜色
+    const colorInput = this.richTextEditor.querySelector('.rich-text-color') as HTMLInputElement;
+    if (colorInput) colorInput.value = segment.color || '#000000';
+
+    // 更新字号
+    const fontSizeInput = this.richTextEditor.querySelector('.rich-text-fontsize') as HTMLInputElement;
+    if (fontSizeInput) fontSizeInput.value = String(segment.fontSize || 16);
+  }
+
+  // 显示富文本编辑器
+  public showRichTextEditor(x: number, y: number, existingObject?: RichTextObject): void {
+    this.richTextPosition = { x, y };
+
+    if (existingObject) {
+      this.editingRichTextId = existingObject.id;
+      this.richTextSegments = JSON.parse(JSON.stringify(existingObject.segments));
+    } else {
+      this.editingRichTextId = null;
+      this.richTextSegments = [{ text: '', color: '#000000', fontSize: 16, bold: false, italic: false }];
+    }
+
+    this.selectedSegmentIndex = 0;
+
+    // 定位编辑器
+    const canvasRect = this.canvas.getBoundingClientRect();
+    const screenX = x * this.scale + this.panOffset.x;
+    const screenY = y * this.scale + this.panOffset.y;
+
+    this.richTextEditor.style.display = 'block';
+    this.richTextEditor.style.left = `${Math.min(screenX, canvasRect.width - 340)}px`;
+    this.richTextEditor.style.top = `${Math.min(screenY, canvasRect.height - 250)}px`;
+
+    this.updateRichTextSegmentsUI();
+    this.updateRichTextToolbarState();
+  }
+
+  // 隐藏富文本编辑器
+  public hideRichTextEditor(): void {
+    this.richTextEditor.style.display = 'none';
+    this.richTextSegments = [];
+    this.selectedSegmentIndex = -1;
+    this.editingRichTextId = null;
+  }
+
+  // 确认富文本
+  private confirmRichText(): void {
+    // 过滤空段落
+    const validSegments = this.richTextSegments.filter(s => s.text.trim());
+    if (validSegments.length === 0) {
+      this.hideRichTextEditor();
+      this.setTool('SELECT');
+      return;
+    }
+
+    if (this.editingRichTextId) {
+      // 编辑现有对象
+      const obj = this.objects.find(o => o.id === this.editingRichTextId) as RichTextObject;
+      if (obj) {
+        obj.segments = validSegments;
+        this.saveHistory();
+        this.renderCanvas();
+      }
+    } else {
+      // 创建新对象
+      const richTextObj: RichTextObject = {
+        id: this.generateId(),
+        type: 'RICH_TEXT',
+        x: this.richTextPosition.x,
+        y: this.richTextPosition.y,
+        segments: validSegments,
+        fontSize: 16,
+        color: this.color,
+        lineWidth: this.lineWidth,
+        rotation: 0
+      };
+      this.objects.push(richTextObj);
+      this.saveHistory();
+      this.renderCanvas();
+      const emptyHint2 = this.shadow.querySelector('.empty-hint') as HTMLElement;
+      if (emptyHint2) emptyHint2.style.display = 'none';
+    }
+
+    this.hideRichTextEditor();
+    // 确认后切换到选择模式
+    this.setTool('SELECT');
+  }
+
+  // HTML转义
+  private escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // ========== 时间线编辑器方法 ==========
+
+  // 绑定时间线编辑器事件
+  private bindTimelineEditorEvents(): void {
+    // 播放按钮
+    this.timelineEditor.querySelector('.timeline-btn.play')?.addEventListener('click', () => {
+      this.playTimeline();
+    });
+
+    // 暂停按钮
+    this.timelineEditor.querySelector('.timeline-btn.pause')?.addEventListener('click', () => {
+      this.pauseTimeline();
+    });
+
+    // 停止按钮
+    this.timelineEditor.querySelector('.timeline-btn.stop')?.addEventListener('click', () => {
+      this.stopTimeline();
+    });
+
+    // 关闭按钮
+    this.timelineEditor.querySelector('.timeline-close')?.addEventListener('click', () => {
+      this.hideTimelineEditor();
+    });
+
+    // 添加关键帧按钮
+    this.timelineEditor.querySelector('.timeline-add-keyframe')?.addEventListener('click', () => {
+      this.addKeyframeAtCurrentTime();
+    });
+
+    // 时间轴点击定位
+    const ruler = this.timelineEditor.querySelector('.timeline-ruler');
+    ruler?.addEventListener('click', (e) => {
+      const rect = (ruler as HTMLElement).getBoundingClientRect();
+      const x = (e as MouseEvent).clientX - rect.left;
+      const percent = x / rect.width;
+      this.seekTimeline(percent * this.timelineDuration);
+    });
+  }
+
+  // 显示时间线编辑器
+  public showTimelineEditor(): void {
+    this.timelineEditor.style.display = 'block';
+    this.updateTimelineTracks();
+  }
+
+  // 隐藏时间线编辑器
+  public hideTimelineEditor(): void {
+    this.timelineEditor.style.display = 'none';
+    this.stopTimeline();
+  }
+
+  // 更新时间线轨道显示
+  private updateTimelineTracks(): void {
+    const tracksContainer = this.timelineEditor.querySelector('.timeline-tracks');
+    if (!tracksContainer) return;
+
+    // 获取有动画的对象
+    const tweenArray = Array.from(this.tweens.values());
+    const animatedObjectIds = new Set(tweenArray.map(t => t.objectId));
+    const animatedObjects = this.objects.filter(obj => animatedObjectIds.has(obj.id));
+
+    if (animatedObjects.length === 0) {
+      tracksContainer.innerHTML = `<div style="padding: 20px; text-align: center; color: #64748b; font-size: 13px;">
+        ${this.t('noAnimations') || '暂无动画，选择对象后使用 tweenAnimate() 方法添加动画'}
+      </div>`;
+      return;
+    }
+
+    let html = '';
+    animatedObjects.forEach(obj => {
+      const objTweens = tweenArray.filter(t => t.objectId === obj.id);
+      html += `<div class="timeline-track">
+        <span class="timeline-track-label">${obj.type}</span>
+        <div class="timeline-track-bar">`;
+
+      objTweens.forEach(tween => {
+        const delay = tween.config.delay || 0;
+        const duration = tween.config.duration || 1000;
+        const startPercent = (delay / this.timelineDuration) * 100;
+        const widthPercent = (duration / this.timelineDuration) * 100;
+        html += `<div class="timeline-keyframe" style="left: ${startPercent}%" title="${duration}ms"></div>`;
+        html += `<div class="timeline-keyframe" style="left: ${startPercent + widthPercent}%" title="End"></div>`;
+      });
+
+      html += `</div></div>`;
+    });
+
+    tracksContainer.innerHTML = html;
+  }
+
+  // 播放时间线
+  private playTimeline(): void {
+    if (this.timelineIsPlaying) return;
+    this.timelineIsPlaying = true;
+
+    const startTime = performance.now() - this.timelineCurrentTime;
+
+    const animate = () => {
+      if (!this.timelineIsPlaying) return;
+
+      this.timelineCurrentTime = performance.now() - startTime;
+
+      if (this.timelineCurrentTime >= this.timelineDuration) {
+        this.timelineCurrentTime = 0;
+        this.stopTimeline();
+        return;
+      }
+
+      this.updateTimelinePlayhead();
+      requestAnimationFrame(animate);
+    };
+
+    requestAnimationFrame(animate);
+  }
+
+  // 暂停时间线
+  private pauseTimeline(): void {
+    this.timelineIsPlaying = false;
+  }
+
+  // 停止时间线
+  private stopTimeline(): void {
+    this.timelineIsPlaying = false;
+    this.timelineCurrentTime = 0;
+    this.updateTimelinePlayhead();
+  }
+
+  // 定位时间线
+  private seekTimeline(time: number): void {
+    this.timelineCurrentTime = Math.max(0, Math.min(time, this.timelineDuration));
+    this.updateTimelinePlayhead();
+  }
+
+  // 更新播放头位置
+  private updateTimelinePlayhead(): void {
+    const playhead = this.timelineEditor.querySelector('.timeline-playhead') as HTMLElement;
+    const timeDisplay = this.timelineEditor.querySelector('.timeline-time') as HTMLElement;
+
+    if (playhead) {
+      const percent = (this.timelineCurrentTime / this.timelineDuration) * 100;
+      playhead.style.left = `${percent}%`;
+    }
+
+    if (timeDisplay) {
+      timeDisplay.textContent = `${(this.timelineCurrentTime / 1000).toFixed(2)}s`;
+    }
+  }
+
+  // 在当前时间添加关键帧
+  private addKeyframeAtCurrentTime(): void {
+    if (!this.selectedId) {
+      console.error('Please select an object first');
+      return;
+    }
+
+    const obj = this.objects.find(o => o.id === this.selectedId);
+    if (!obj) return;
+
+    // 创建一个简单的位置动画作为示例
+    this.tweenAnimate(this.selectedId, {
+      x: obj.x + 100,
+      y: obj.y
+    }, {
+      duration: 1000,
+      delay: this.timelineCurrentTime,
+      easing: 'easeInOutQuad'
+    });
+
+    this.updateTimelineTracks();
   }
 
   // 渲染画布
@@ -2061,6 +4249,11 @@ export class CanvasDrawingEditor extends HTMLElement {
       this.drawObject(this.ctx, this.currentObject);
     }
 
+    // 绘制贝塞尔曲线编辑状态
+    if (this.tool === 'BEZIER' && this.bezierPoints.length > 0) {
+      this.drawBezierEditState(this.ctx);
+    }
+
     // 绘制选中对象的调整手柄
     if (this.selectedId && this.tool === 'SELECT') {
       const selectedObj = this.objects.find(o => o.id === this.selectedId);
@@ -2075,13 +4268,68 @@ export class CanvasDrawingEditor extends HTMLElement {
         const obj = this.objects.find(o => o.id === id);
         if (obj) {
           const bounds = this.getObjectBounds(obj);
+          this.ctx.save();
+          // 应用与对象相同的变换
+          if (obj.rotation || obj.skewX || obj.skewY) {
+            const centerX = bounds.x + bounds.width / 2;
+            const centerY = bounds.y + bounds.height / 2;
+            this.ctx.translate(centerX, centerY);
+            if (obj.rotation) {
+              this.ctx.rotate(obj.rotation);
+            }
+            if (obj.skewX || obj.skewY) {
+              this.ctx.transform(1, obj.skewY || 0, obj.skewX || 0, 1, 0, 0);
+            }
+            this.ctx.translate(-centerX, -centerY);
+          }
           this.ctx.strokeStyle = 'rgba(139, 92, 246, 0.8)';
           this.ctx.lineWidth = 2 / this.scale;
           this.ctx.setLineDash([5 / this.scale, 5 / this.scale]);
           this.ctx.strokeRect(bounds.x - 2, bounds.y - 2, bounds.width + 4, bounds.height + 4);
           this.ctx.setLineDash([]);
+          this.ctx.restore();
         }
       });
+
+      // 绘制多选整体边界框和变换原点
+      if (this.selectedIds.size >= 2) {
+        const multiBounds = this.getMultiSelectionBounds();
+        if (multiBounds) {
+          // 绘制整体边界框
+          this.ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
+          this.ctx.lineWidth = 2 / this.scale;
+          this.ctx.setLineDash([8 / this.scale, 4 / this.scale]);
+          this.ctx.strokeRect(multiBounds.x - 5, multiBounds.y - 5, multiBounds.width + 10, multiBounds.height + 10);
+          this.ctx.setLineDash([]);
+
+          // 绘制变换原点
+          const origin = this.getMultiTransformOrigin();
+          if (origin) {
+            const originSize = 8 / this.scale;
+
+            // 外圈
+            this.ctx.beginPath();
+            this.ctx.strokeStyle = '#3b82f6';
+            this.ctx.lineWidth = 2 / this.scale;
+            this.ctx.arc(origin.x, origin.y, originSize, 0, Math.PI * 2);
+            this.ctx.stroke();
+
+            // 十字线
+            this.ctx.beginPath();
+            this.ctx.moveTo(origin.x - originSize * 1.5, origin.y);
+            this.ctx.lineTo(origin.x + originSize * 1.5, origin.y);
+            this.ctx.moveTo(origin.x, origin.y - originSize * 1.5);
+            this.ctx.lineTo(origin.x, origin.y + originSize * 1.5);
+            this.ctx.stroke();
+
+            // 中心点
+            this.ctx.beginPath();
+            this.ctx.fillStyle = this.transformOrigin ? '#ef4444' : '#3b82f6'; // 自定义原点显示红色
+            this.ctx.arc(origin.x, origin.y, 3 / this.scale, 0, Math.PI * 2);
+            this.ctx.fill();
+          }
+        }
+      }
     }
 
     // 绘制框选矩形
@@ -2103,6 +4351,29 @@ export class CanvasDrawingEditor extends HTMLElement {
     // 检查可见性
     if (obj.visible === false) return;
 
+    ctx.save();
+
+    // 应用透明度
+    if (obj.opacity !== undefined && obj.opacity !== 1) {
+      ctx.globalAlpha = obj.opacity;
+    }
+
+    // 应用旋转和斜切变换
+    if (obj.rotation || obj.skewX || obj.skewY) {
+      const bounds = this.getObjectBounds(obj);
+      const centerX = bounds.x + bounds.width / 2;
+      const centerY = bounds.y + bounds.height / 2;
+      ctx.translate(centerX, centerY);
+      if (obj.rotation) {
+        ctx.rotate(obj.rotation);
+      }
+      if (obj.skewX || obj.skewY) {
+        // 应用斜切变换矩阵
+        ctx.transform(1, obj.skewY || 0, obj.skewX || 0, 1, 0, 0);
+      }
+      ctx.translate(-centerX, -centerY);
+    }
+
     ctx.beginPath();
     ctx.strokeStyle = obj.color;
     ctx.lineWidth = obj.lineWidth;
@@ -2119,14 +4390,20 @@ export class CanvasDrawingEditor extends HTMLElement {
     switch (obj.type) {
       case 'RECTANGLE': {
         const r = obj as RectObject;
+        // 应用线条样式
+        this.applyLineStyle(ctx, r.lineStyle);
         ctx.strokeRect(r.x, r.y, r.width, r.height);
+        ctx.setLineDash([]); // 重置虚线
         break;
       }
       case 'CIRCLE': {
         const c = obj as CircleObject;
+        // 应用线条样式
+        this.applyLineStyle(ctx, c.lineStyle);
         ctx.beginPath();
         ctx.arc(c.x, c.y, c.radius, 0, 2 * Math.PI);
         ctx.stroke();
+        ctx.setLineDash([]); // 重置虚线
         break;
       }
       case 'PATH': {
@@ -2169,10 +4446,88 @@ export class CanvasDrawingEditor extends HTMLElement {
         }
         break;
       }
+      case 'RICH_TEXT': {
+        const rt = obj as RichTextObject;
+        let offsetX = 0;
+        const baseY = rt.y;
+        const defaultFontFamily = rt.fontFamily || 'sans-serif';
+
+        for (const segment of rt.segments) {
+          const fontSize = segment.fontSize || rt.fontSize;
+          const fontFamily = segment.fontFamily || defaultFontFamily;
+          const bold = segment.bold ? 'bold ' : '';
+          const italic = segment.italic ? 'italic ' : '';
+
+          // 设置字体样式
+          ctx.font = `${italic}${bold}${fontSize}px ${fontFamily}`;
+
+          // 绘制背景色（高亮）
+          if (segment.backgroundColor) {
+            const segmentWidth = ctx.measureText(segment.text).width;
+            ctx.fillStyle = segment.backgroundColor;
+            ctx.fillRect(rt.x + offsetX, baseY - fontSize, segmentWidth, fontSize * 1.2);
+          }
+
+          // 设置文本颜色
+          ctx.fillStyle = segment.color || rt.color;
+
+          // 绘制文本
+          ctx.fillText(segment.text, rt.x + offsetX, baseY);
+
+          // 获取文本宽度用于后续装饰线和偏移计算
+          const textWidth = ctx.measureText(segment.text).width;
+
+          // 绘制下划线
+          if (segment.underline) {
+            ctx.beginPath();
+            ctx.strokeStyle = segment.color || rt.color;
+            ctx.lineWidth = Math.max(1, fontSize / 12);
+            ctx.moveTo(rt.x + offsetX, baseY + fontSize * 0.1);
+            ctx.lineTo(rt.x + offsetX + textWidth, baseY + fontSize * 0.1);
+            ctx.stroke();
+          }
+
+          // 绘制删除线
+          if (segment.strikethrough) {
+            ctx.beginPath();
+            ctx.strokeStyle = segment.color || rt.color;
+            ctx.lineWidth = Math.max(1, fontSize / 12);
+            ctx.moveTo(rt.x + offsetX, baseY - fontSize * 0.35);
+            ctx.lineTo(rt.x + offsetX + textWidth, baseY - fontSize * 0.35);
+            ctx.stroke();
+          }
+
+          offsetX += textWidth;
+        }
+        break;
+      }
       case 'IMAGE': {
         const imgObj = obj as ImageObject;
         if (imgObj.imageElement && imgObj.imageElement.complete) {
+          // 应用滤镜
+          if (imgObj.filters) {
+            const filterParts: string[] = [];
+            if (imgObj.filters.brightness !== undefined && imgObj.filters.brightness !== 100) {
+              filterParts.push(`brightness(${imgObj.filters.brightness}%)`);
+            }
+            if (imgObj.filters.contrast !== undefined && imgObj.filters.contrast !== 100) {
+              filterParts.push(`contrast(${imgObj.filters.contrast}%)`);
+            }
+            if (imgObj.filters.blur !== undefined && imgObj.filters.blur > 0) {
+              filterParts.push(`blur(${imgObj.filters.blur}px)`);
+            }
+            if (imgObj.filters.grayscale !== undefined && imgObj.filters.grayscale > 0) {
+              filterParts.push(`grayscale(${imgObj.filters.grayscale}%)`);
+            }
+            if (imgObj.filters.saturate !== undefined && imgObj.filters.saturate !== 100) {
+              filterParts.push(`saturate(${imgObj.filters.saturate}%)`);
+            }
+            if (filterParts.length > 0) {
+              ctx.filter = filterParts.join(' ');
+            }
+          }
           ctx.drawImage(imgObj.imageElement, imgObj.x, imgObj.y, imgObj.width, imgObj.height);
+          ctx.filter = 'none'; // 重置滤镜
         } else if (imgObj.dataUrl) {
           // 加载图片
           const img = new Image();
@@ -2186,32 +4541,57 @@ export class CanvasDrawingEditor extends HTMLElement {
       }
       case 'LINE': {
         const l = obj as LineObject;
+        // 应用线条样式
+        this.applyLineStyle(ctx, l.lineStyle);
         ctx.beginPath();
         ctx.moveTo(l.x, l.y);
         ctx.lineTo(l.x2, l.y2);
         ctx.stroke();
+        ctx.setLineDash([]); // 重置虚线
         break;
       }
       case 'ARROW': {
         const a = obj as ArrowObject;
+        // 应用线条样式
+        this.applyLineStyle(ctx, a.lineStyle);
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
         ctx.lineTo(a.x2, a.y2);
         ctx.stroke();
+        ctx.setLineDash([]); // 重置虚线绘制箭头头部
+
         // 绘制箭头头部
         const angle = Math.atan2(a.y2 - a.y, a.x2 - a.x);
         const headLength = 15;
-        ctx.beginPath();
-        ctx.moveTo(a.x2, a.y2);
-        ctx.lineTo(a.x2 - headLength * Math.cos(angle - Math.PI / 6), a.y2 - headLength * Math.sin(angle - Math.PI / 6));
-        ctx.moveTo(a.x2, a.y2);
-        ctx.lineTo(a.x2 - headLength * Math.cos(angle + Math.PI / 6), a.y2 - headLength * Math.sin(angle + Math.PI / 6));
-        ctx.stroke();
+        const arrowType = a.arrowType || 'single';
+
+        // 绘制终点箭头（单向或双向都有）
+        if (arrowType !== 'none') {
+          ctx.beginPath();
+          ctx.moveTo(a.x2, a.y2);
+          ctx.lineTo(a.x2 - headLength * Math.cos(angle - Math.PI / 6), a.y2 - headLength * Math.sin(angle - Math.PI / 6));
+          ctx.moveTo(a.x2, a.y2);
+          ctx.lineTo(a.x2 - headLength * Math.cos(angle + Math.PI / 6), a.y2 - headLength * Math.sin(angle + Math.PI / 6));
+          ctx.stroke();
+        }
+
+        // 绘制起点箭头（双向箭头）
+        if (arrowType === 'double') {
+          const reverseAngle = angle + Math.PI;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(a.x - headLength * Math.cos(reverseAngle - Math.PI / 6), a.y - headLength * Math.sin(reverseAngle - Math.PI / 6));
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(a.x - headLength * Math.cos(reverseAngle + Math.PI / 6), a.y - headLength * Math.sin(reverseAngle + Math.PI / 6));
+          ctx.stroke();
+        }
         break;
       }
       case 'POLYGON': {
         const pg = obj as PolygonObject;
         if (pg.radius <= 0) break;
+        // 应用线条样式
+        this.applyLineStyle(ctx, pg.lineStyle);
         ctx.beginPath();
         for (let i = 0; i < pg.sides; i++) {
           const angle = (2 * Math.PI / pg.sides) * i - Math.PI / 2;
@@ -2224,6 +4604,132 @@ export class CanvasDrawingEditor extends HTMLElement {
           }
         }
         ctx.closePath();
+        ctx.stroke();
+        ctx.setLineDash([]); // 重置虚线
+        break;
+      }
+      case 'TRIANGLE': {
+        const tri = obj as TriangleObject;
+        if (tri.radius <= 0) break;
+        // 应用线条样式
+        this.applyLineStyle(ctx, tri.lineStyle);
+        ctx.beginPath();
+        for (let i = 0; i < 3; i++) {
+          const angle = (2 * Math.PI / 3) * i - Math.PI / 2;
+          const px = tri.x + tri.radius * Math.cos(angle);
+          const py = tri.y + tri.radius * Math.sin(angle);
+          if (i === 0) {
+            ctx.moveTo(px, py);
+          } else {
+            ctx.lineTo(px, py);
+          }
+        }
+        ctx.closePath();
+        ctx.stroke();
+        ctx.setLineDash([]); // 重置虚线
+        break;
+      }
+      case 'STAR': {
+        const star = obj as StarObject;
+        if (star.outerRadius <= 0) break;
+        // 应用线条样式
+        this.applyLineStyle(ctx, star.lineStyle);
+        ctx.beginPath();
+        const starPoints = star.points || 5;
+        for (let i = 0; i < starPoints * 2; i++) {
+          const angle = (Math.PI / starPoints) * i - Math.PI / 2;
+          const radius = i % 2 === 0 ? star.outerRadius : star.innerRadius;
+          const px = star.x + radius * Math.cos(angle);
+          const py = star.y + radius * Math.sin(angle);
+          if (i === 0) {
+            ctx.moveTo(px, py);
+          } else {
+            ctx.lineTo(px, py);
+          }
+        }
+        ctx.closePath();
+        ctx.stroke();
+        ctx.setLineDash([]); // 重置虚线
+        break;
+      }
+      case 'HEART': {
+        const heart = obj as HeartObject;
+        if (heart.size <= 0) break;
+        // 应用线条样式
+        this.applyLineStyle(ctx, heart.lineStyle);
+        const size = heart.size;
+        ctx.beginPath();
+        // 心形路径
+        ctx.moveTo(heart.x, heart.y + size * 0.3);
+        // 左半边
+        ctx.bezierCurveTo(
+          heart.x - size * 0.5, heart.y - size * 0.3,
+          heart.x - size, heart.y + size * 0.3,
+          heart.x, heart.y + size
+        );
+        // 右半边
+        ctx.bezierCurveTo(
+          heart.x + size, heart.y + size * 0.3,
+          heart.x + size * 0.5, heart.y - size * 0.3,
+          heart.x, heart.y + size * 0.3
+        );
+        ctx.closePath();
+        ctx.stroke();
+        ctx.setLineDash([]); // 重置虚线
+        break;
+      }
+      case 'DIAMOND': {
+        const diamond = obj as DiamondObject;
+        if (diamond.width <= 0 || diamond.height <= 0) break;
+        // 应用线条样式
+        this.applyLineStyle(ctx, diamond.lineStyle);
+        ctx.beginPath();
+        ctx.moveTo(diamond.x, diamond.y - diamond.height / 2); // 上
+        ctx.lineTo(diamond.x + diamond.width / 2, diamond.y);  // 右
+        ctx.lineTo(diamond.x, diamond.y + diamond.height / 2); // 下
+        ctx.lineTo(diamond.x - diamond.width / 2, diamond.y);  // 左
+        ctx.closePath();
+        ctx.stroke();
+        ctx.setLineDash([]); // 重置虚线
+        break;
+      }
+      case 'BEZIER': {
+        const bezier = obj as BezierObject;
+        if (bezier.points.length < 2) break;
+
+        ctx.beginPath();
+        const firstPoint = bezier.points[0];
+        ctx.moveTo(firstPoint.x, firstPoint.y);
+
+        for (let i = 1; i < bezier.points.length; i++) {
+          const prevPoint = bezier.points[i - 1];
+          const currPoint = bezier.points[i];
+
+          // 使用贝塞尔曲线连接
+          const cp1x = prevPoint.cp2x ?? prevPoint.x;
+          const cp1y = prevPoint.cp2y ?? prevPoint.y;
+          const cp2x = currPoint.cp1x ?? currPoint.x;
+          const cp2y = currPoint.cp1y ?? currPoint.y;
+
+          ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, currPoint.x, currPoint.y);
+        }
+
+        // 如果闭合，连接回起点
+        if (bezier.closed && bezier.points.length > 2) {
+          const lastPoint = bezier.points[bezier.points.length - 1];
+          const cp1x = lastPoint.cp2x ?? lastPoint.x;
+          const cp1y = lastPoint.cp2y ?? lastPoint.y;
+          const cp2x = firstPoint.cp1x ?? firstPoint.x;
+          const cp2y = firstPoint.cp1y ?? firstPoint.y;
+          ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, firstPoint.x, firstPoint.y);
+          ctx.closePath();
+        }
+
+        // 填充（如果有）
+        if (bezier.fill && bezier.closed) {
+          ctx.fillStyle = bezier.fill;
+          ctx.fill();
+        }
         ctx.stroke();
         break;
       }
@@ -2246,12 +4752,31 @@ export class CanvasDrawingEditor extends HTMLElement {
         break;
       }
     }
+
+    ctx.restore();
   }
 
   // 绘制选中手柄
   private drawSelectionHandles(ctx: CanvasRenderingContext2D, obj: CanvasObject): void {
     const bounds = this.getObjectBounds(obj);
     const handleSize = 8;
+    const rotateHandleDistance = 30; // 旋转手柄距离对象顶部的距离
+
+    ctx.save();
+
+    // 应用旋转和斜切变换
+    const centerX = bounds.x + bounds.width / 2;
+    const centerY = bounds.y + bounds.height / 2;
+    if (obj.rotation || obj.skewX || obj.skewY) {
+      ctx.translate(centerX, centerY);
+      if (obj.rotation) {
+        ctx.rotate(obj.rotation);
+      }
+      if (obj.skewX || obj.skewY) {
+        ctx.transform(1, obj.skewY || 0, obj.skewX || 0, 1, 0, 0);
+      }
+      ctx.translate(-centerX, -centerY);
+    }
 
     ctx.shadowBlur = 0;
     ctx.fillStyle = '#3b82f6';
@@ -2279,6 +4804,117 @@ export class CanvasDrawingEditor extends HTMLElement {
     ctx.setLineDash([5, 5]);
     ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
     ctx.setLineDash([]);
+
+    // 绘制旋转手柄
+    const rotateHandleY = bounds.y - rotateHandleDistance;
+
+    // 连接线
+    ctx.beginPath();
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([]);
+    ctx.moveTo(centerX, bounds.y);
+    ctx.lineTo(centerX, rotateHandleY);
+    ctx.stroke();
+
+    // 旋转手柄圆形
+    ctx.beginPath();
+    ctx.fillStyle = '#3b82f6';
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.arc(centerX, rotateHandleY, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // 绘制旋转图标（圆弧箭头）
+    ctx.beginPath();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5;
+    ctx.arc(centerX, rotateHandleY, 3, -Math.PI * 0.7, Math.PI * 0.3);
+    ctx.stroke();
+
+    // 绘制斜切手柄（边缘中点的菱形）
+    const skewHandleSize = 6;
+    const skewHandles = [
+      { x: centerX, y: bounds.y, type: 'top' },                           // 上
+      { x: centerX, y: bounds.y + bounds.height, type: 'bottom' },        // 下
+      { x: bounds.x, y: centerY, type: 'left' },                          // 左
+      { x: bounds.x + bounds.width, y: centerY, type: 'right' },          // 右
+    ];
+
+    ctx.fillStyle = '#f59e0b'; // 橙色区分斜切手柄
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5;
+
+    skewHandles.forEach(handle => {
+      ctx.beginPath();
+      // 绘制菱形
+      ctx.moveTo(handle.x, handle.y - skewHandleSize);
+      ctx.lineTo(handle.x + skewHandleSize, handle.y);
+      ctx.lineTo(handle.x, handle.y + skewHandleSize);
+      ctx.lineTo(handle.x - skewHandleSize, handle.y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    });
+
+    ctx.restore();
+  }
+
+  // 获取斜切手柄位置
+  private getSkewHandleAtPoint(obj: CanvasObject, x: number, y: number): 'top' | 'bottom' | 'left' | 'right' | null {
+    const bounds = this.getObjectBounds(obj);
+    const centerX = bounds.x + bounds.width / 2;
+    const centerY = bounds.y + bounds.height / 2;
+    const handleSize = 10; // 点击区域
+
+    // 如果对象有旋转或斜切，需要将点击坐标反向变换
+    let localX = x;
+    let localY = y;
+    if (obj.rotation || obj.skewX || obj.skewY) {
+      let dx = x - centerX;
+      let dy = y - centerY;
+
+      // 反向旋转
+      if (obj.rotation) {
+        const cos = Math.cos(-obj.rotation);
+        const sin = Math.sin(-obj.rotation);
+        const newDx = dx * cos - dy * sin;
+        const newDy = dx * sin + dy * cos;
+        dx = newDx;
+        dy = newDy;
+      }
+
+      // 反向斜切（逆矩阵）
+      if (obj.skewX || obj.skewY) {
+        const skewX = obj.skewX || 0;
+        const skewY = obj.skewY || 0;
+        const det = 1 - skewX * skewY;
+        if (Math.abs(det) > 0.001) {
+          const newDx = (dx - skewX * dy) / det;
+          const newDy = (dy - skewY * dx) / det;
+          dx = newDx;
+          dy = newDy;
+        }
+      }
+
+      localX = centerX + dx;
+      localY = centerY + dy;
+    }
+
+    const handles = [
+      { x: centerX, y: bounds.y, type: 'top' as const },
+      { x: centerX, y: bounds.y + bounds.height, type: 'bottom' as const },
+      { x: bounds.x, y: centerY, type: 'left' as const },
+      { x: bounds.x + bounds.width, y: centerY, type: 'right' as const },
+    ];
+
+    for (const handle of handles) {
+      if (Math.abs(localX - handle.x) <= handleSize && Math.abs(localY - handle.y) <= handleSize) {
+        return handle.type;
+      }
+    }
+    return null;
   }
 
   // 图片上传处理
@@ -2476,6 +5112,33 @@ export class CanvasDrawingEditor extends HTMLElement {
       } else {
         selectionInfo.classList.remove('visible');
         selectionInfo.innerHTML = '';
+      }
+    }
+
+    // 更新滤镜控制面板显示
+    const filterControls = this.shadow.querySelector('.filter-controls') as HTMLElement;
+    if (filterControls) {
+      const selectedObjs = this.getSelectedObjects();
+      const imageObj = selectedObjs.find(o => o.type === 'IMAGE') as ImageObject | undefined;
+      if (imageObj) {
+        filterControls.style.display = 'flex';
+        // 更新滑块值
+        const brightnessSlider = filterControls.querySelector('.filter-brightness') as HTMLInputElement;
+        const contrastSlider = filterControls.querySelector('.filter-contrast') as HTMLInputElement;
+        if (brightnessSlider) {
+          const brightness = imageObj.filters?.brightness ?? 100;
+          brightnessSlider.value = String(brightness);
+          const valueSpan = brightnessSlider.parentElement?.querySelector('.filter-value');
+          if (valueSpan) valueSpan.textContent = `${brightness}%`;
+        }
+        if (contrastSlider) {
+          const contrast = imageObj.filters?.contrast ?? 100;
+          contrastSlider.value = String(contrast);
+          const valueSpan = contrastSlider.parentElement?.querySelector('.filter-value');
+          if (valueSpan) valueSpan.textContent = `${contrast}%`;
+        }
+      } else {
+        filterControls.style.display = 'none';
       }
     }
 
@@ -2688,7 +5351,7 @@ export class CanvasDrawingEditor extends HTMLElement {
           <div class="divider"></div>
 
           <!-- 形状工具组 -->
-          ${(tool.rectangle || tool.circle || tool.line || tool.arrow || tool.polygon) ? `
+          ${(tool.rectangle || tool.circle || tool.line || tool.arrow || tool.polygon || tool.triangle || tool.star || tool.heart || tool.diamond) ? `
             <div class="tool-group" data-group="shapes">
               <button class="tool-btn tool-group-btn" title="${this.t('shapes')}">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2713,6 +5376,48 @@ export class CanvasDrawingEditor extends HTMLElement {
                     <span class="dropdown-label">${this.t('circle')}</span>
                   </button>
                 ` : ''}
+                ${tool.triangle ? `
+                  <button class="tool-btn dropdown-item" data-tool="TRIANGLE" title="${this.t('triangle')}">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polygon points="12 3 22 21 2 21"/>
+                    </svg>
+                    <span class="dropdown-label">${this.t('triangle')}</span>
+                  </button>
+                ` : ''}
+                ${tool.star ? `
+                  <button class="tool-btn dropdown-item" data-tool="STAR" title="${this.t('star')}">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                    <span class="dropdown-label">${this.t('star')}</span>
+                  </button>
+                ` : ''}
+                ${tool.heart ? `
+                  <button class="tool-btn dropdown-item" data-tool="HEART" title="${this.t('heart')}">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                    <span class="dropdown-label">${this.t('heart')}</span>
+                  </button>
+                ` : ''}
+                ${tool.diamond ? `
+                  <button class="tool-btn dropdown-item" data-tool="DIAMOND" title="${this.t('diamond')}">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polygon points="12 2 22 12 12 22 2 12"/>
+                    </svg>
+                    <span class="dropdown-label">${this.t('diamond')}</span>
+                  </button>
+                ` : ''}
+                ${tool.bezier ? `
+                  <button class="tool-btn dropdown-item" data-tool="BEZIER" title="${this.t('bezierTool')}">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 17c3-6 9-6 12 0s9 6 12 0"/>
+                      <circle cx="3" cy="17" r="2"/>
+                      <circle cx="21" cy="17" r="2"/>
+                    </svg>
+                    <span class="dropdown-label">${this.t('bezier')}</span>
+                  </button>
+                ` : ''}
                 ${tool.line ? `
                   <button class="tool-btn dropdown-item" data-tool="LINE" title="${this.t('line')}">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2730,6 +5435,16 @@ export class CanvasDrawingEditor extends HTMLElement {
                     <span class="dropdown-label">${this.t('arrow')}</span>
                   </button>
                 ` : ''}
+                ${tool.arrow ? `
+                  <button class="tool-btn dropdown-item" data-tool="DOUBLE_ARROW" title="${this.t('doubleArrow')}">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="5" y1="19" x2="19" y2="5"/>
+                      <polyline points="9 5 19 5 19 15"/>
+                      <polyline points="15 19 5 19 5 9"/>
+                    </svg>
+                    <span class="dropdown-label">${this.t('doubleArrow')}</span>
+                  </button>
+                ` : ''}
                 ${tool.polygon ? `
                   <button class="tool-btn dropdown-item" data-tool="POLYGON" title="${this.t('polygon')}">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2745,8 +5460,38 @@ export class CanvasDrawingEditor extends HTMLElement {
           <!-- 画笔单独 -->
           ${tool.pencil ? this.createToolButton('PENCIL', 'pencil-icon', this.t('pencil')) : ''}
 
-          <!-- 文本单独 -->
-          ${tool.text ? this.createToolButton('TEXT', 'text-icon', this.t('text')) : ''}
+          <!-- 文本工具组 -->
+          ${tool.text ? `
+            <div class="tool-group" data-group="text">
+              <button class="tool-btn tool-group-btn" title="${this.t('text') || '文本'}">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="4 7 4 4 20 4 20 7"/>
+                  <line x1="9" y1="20" x2="15" y2="20"/>
+                  <line x1="12" y1="4" x2="12" y2="20"/>
+                </svg>
+                <span class="dropdown-indicator">▾</span>
+              </button>
+              <div class="tool-dropdown">
+                <button class="tool-btn dropdown-item" data-tool="TEXT" title="${this.t('text') || '普通文本'}">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="4 7 4 4 20 4 20 7"/>
+                    <line x1="9" y1="20" x2="15" y2="20"/>
+                    <line x1="12" y1="4" x2="12" y2="20"/>
+                  </svg>
+                  <span class="dropdown-label">${this.t('text') || '普通文本'}</span>
+                </button>
+                <button class="tool-btn dropdown-item" data-tool="RICH_TEXT" title="${this.t('richText') || '富文本'}">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 7V4h16v3"/>
+                    <path d="M9 20h6"/>
+                    <path d="M12 4v16"/>
+                    <path d="M7 12h4" stroke-width="3"/>
+                  </svg>
+                  <span class="dropdown-label">${this.t('richText') || '富文本'}</span>
+                </button>
+              </div>
+            </div>
+          ` : ''}
 
           <!-- 媒体工具组（图片+图层） -->
           ${(tool.image || tool.layers) ? `
@@ -2840,6 +5585,7 @@ export class CanvasDrawingEditor extends HTMLElement {
             </button>
           ` : ''}
           <div class="spacer"></div>
+
           ${tool.color ? `
             <input type="color" class="color-picker" value="${this.color}" title="${this.t('colorPicker')}" />
           ` : ''}
@@ -2854,6 +5600,44 @@ export class CanvasDrawingEditor extends HTMLElement {
               <div class="selection-info"></div>
             </div>
             <div class="top-bar-right">
+              <!-- 滤镜控制面板（选中图片时显示） -->
+              <div class="filter-controls" style="display: none;">
+                <span class="filter-label">${this.t('filters')}:</span>
+                <div class="filter-item">
+                  <label>${this.t('brightness')}</label>
+                  <input type="range" class="filter-slider filter-brightness" min="0" max="200" value="100" />
+                  <span class="filter-value">100%</span>
+                </div>
+                <div class="filter-item">
+                  <label>${this.t('contrast')}</label>
+                  <input type="range" class="filter-slider filter-contrast" min="0" max="200" value="100" />
+                  <span class="filter-value">100%</span>
+                </div>
+                <button class="filter-reset-btn" title="${this.t('resetFilters')}">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                  </svg>
+                </button>
+              </div>
+              <!-- 线条样式选择器 -->
+              <div class="line-style-group">
+                <button class="tool-btn line-style-btn ${this.lineStyle === 'solid' ? 'active' : ''}" data-line-style="solid" title="${this.t('lineStyleSolid')}">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"/>
+                  </svg>
+                </button>
+                <button class="tool-btn line-style-btn ${this.lineStyle === 'dashed' ? 'active' : ''}" data-line-style="dashed" title="${this.t('lineStyleDashed')}">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 2">
+                    <line x1="3" y1="12" x2="21" y2="12"/>
+                  </svg>
+                </button>
+                <button class="tool-btn line-style-btn ${this.lineStyle === 'dotted' ? 'active' : ''}" data-line-style="dotted" title="${this.t('lineStyleDotted')}">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="2 2">
+                    <line x1="3" y1="12" x2="21" y2="12"/>
+                  </svg>
+                </button>
+              </div>
               ${tool.align ? `
                 <div class="align-controls">
                   <button class="align-btn align-left-btn" title="${this.t('alignLeft')}">
@@ -2948,6 +5732,59 @@ export class CanvasDrawingEditor extends HTMLElement {
               <input type="text" class="text-input" placeholder="${this.t('textPlaceholder')}" />
             </div>
 
+            <!-- 富文本编辑器 -->
+            <div class="rich-text-editor" style="display: none;">
+              <div class="rich-text-toolbar">
+                <button class="rich-text-btn" data-action="bold" title="${this.t('bold') || '粗体'}">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                    <path d="M15.6 10.79c.97-.67 1.65-1.77 1.65-2.79 0-2.26-1.75-4-4-4H7v14h7.04c2.09 0 3.71-1.7 3.71-3.79 0-1.52-.86-2.82-2.15-3.42zM10 6.5h3c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-3v-3zm3.5 9H10v-3h3.5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5z"/>
+                  </svg>
+                </button>
+                <button class="rich-text-btn" data-action="italic" title="${this.t('italic') || '斜体'}">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                    <path d="M10 4v3h2.21l-3.42 8H6v3h8v-3h-2.21l3.42-8H18V4z"/>
+                  </svg>
+                </button>
+                <div class="rich-text-divider"></div>
+                <input type="color" class="rich-text-color" value="#000000" title="${this.t('textColor') || '文字颜色'}">
+                <input type="number" class="rich-text-fontsize" value="16" min="8" max="200" title="${this.t('fontSize') || '字号'}">
+                <div class="rich-text-divider"></div>
+                <button class="rich-text-btn" data-action="add-segment" title="${this.t('addSegment') || '添加文本段'}">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="rich-text-segments"></div>
+              <div class="rich-text-actions">
+                <button class="rich-text-action-btn cancel">${this.t('cancel') || '取消'}</button>
+                <button class="rich-text-action-btn confirm">${this.t('confirm') || '确定'}</button>
+              </div>
+            </div>
+
+            <!-- 动画时间线编辑器 -->
+            <div class="timeline-editor" style="display: none;">
+              <div class="timeline-header">
+                <span class="timeline-title">${this.t('animationTimeline') || '动画时间线'}</span>
+                <div class="timeline-controls">
+                  <button class="timeline-btn play" title="${this.t('play') || '播放'}">▶</button>
+                  <button class="timeline-btn pause" title="${this.t('pause') || '暂停'}">⏸</button>
+                  <button class="timeline-btn stop" title="${this.t('stop') || '停止'}">⏹</button>
+                </div>
+                <button class="timeline-close" title="${this.t('close') || '关闭'}">×</button>
+              </div>
+              <div class="timeline-content">
+                <div class="timeline-tracks"></div>
+                <div class="timeline-ruler">
+                  <div class="timeline-playhead"></div>
+                </div>
+              </div>
+              <div class="timeline-footer">
+                <button class="timeline-add-keyframe">${this.t('addKeyframe') || '添加关键帧'}</button>
+                <span class="timeline-time">0.00s</span>
+              </div>
+            </div>
+
             <!-- 空画布提示 -->
             <div class="empty-hint" style="display: ${this.getAttribute('initial-data') ? 'none' : 'flex'};">
               <h3>${this.t('startCreating')}</h3>
@@ -3012,6 +5849,8 @@ export class CanvasDrawingEditor extends HTMLElement {
 
     this.textInputContainer = this.shadow.querySelector('.text-input-container')!;
     this.textInput = this.shadow.querySelector('.text-input')!;
+    this.richTextEditor = this.shadow.querySelector('.rich-text-editor')!;
+    this.timelineEditor = this.shadow.querySelector('.timeline-editor')!;
 
     // 热区相关 DOM 引用
     this.contextMenu = this.shadow.querySelector('.context-menu')!;
@@ -3019,24 +5858,39 @@ export class CanvasDrawingEditor extends HTMLElement {
 
     // 绑定事件
     this.bindEvents();
+    this.bindRichTextEditorEvents();
+    this.bindTimelineEditorEvents();
   }
 
   // 绑定事件
   private bindEvents(): void {
-    // 画布事件
+    // 画布事件 - 鼠标
     this.canvas.addEventListener('mousedown', (e) => this.handleCanvasPointerDown(e));
     this.canvas.addEventListener('mousemove', (e) => this.handleCanvasPointerMove(e));
     this.canvas.addEventListener('mouseup', () => this.handleCanvasPointerUp());
     this.canvas.addEventListener('mouseleave', () => this.handleCanvasPointerUp());
     this.canvas.addEventListener('dblclick', (e) => this.handleCanvasDoubleClick(e));
-    this.canvas.addEventListener('touchstart', (e) => this.handleCanvasPointerDown(e));
-    this.canvas.addEventListener('touchmove', (e) => this.handleCanvasPointerMove(e));
-    this.canvas.addEventListener('touchend', () => this.handleCanvasPointerUp());
+
+    // 画布事件 - 触摸（增强版多点触摸支持）
+    this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+    this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+    this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
+    this.canvas.addEventListener('touchcancel', (e) => this.handleTouchEnd(e), { passive: false });
     this.canvas.addEventListener('wheel', this.boundHandleWheel, { passive: false });
 
-    // 右键菜单事件（仅在启用热区时）
+    // 右键菜单事件
+    this.canvas.addEventListener('contextmenu', (e) => {
+      // 贝塞尔曲线工具禁用默认右键菜单
+      if (this.tool === 'BEZIER') {
+        e.preventDefault();
+        return;
+      }
+      // 仅在启用热区时处理右键菜单
+      if (this.config.enableHotzone) {
+        this.handleContextMenu(e);
+      }
+    });
     if (this.config.enableHotzone) {
-      this.canvas.addEventListener('contextmenu', (e) => this.handleContextMenu(e));
       this.bindHotzoneEvents();
     }
 
@@ -3099,6 +5953,124 @@ export class CanvasDrawingEditor extends HTMLElement {
     if (alignLeftBtn) alignLeftBtn.addEventListener('click', () => this.alignLeft());
     if (alignCenterBtn) alignCenterBtn.addEventListener('click', () => this.alignCenterH());
     if (alignRightBtn) alignRightBtn.addEventListener('click', () => this.alignRight());
+
+    // 线条样式选择器
+    this.shadow.querySelectorAll('.line-style-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const style = target.dataset.lineStyle as LineStyle;
+        this.lineStyle = style;
+        // 更新按钮状态
+        this.shadow.querySelectorAll('.line-style-btn').forEach(b => b.classList.remove('active'));
+        target.classList.add('active');
+        // 如果有选中的形状对象，更新其样式（除了 BEZIER 和 PATH）
+        const selectedObjs = this.getSelectedObjects();
+        if (selectedObjs.length > 0) {
+          this.saveHistory();
+          selectedObjs.forEach(obj => {
+            // 支持所有形状的线条样式（除了 BEZIER、PATH、TEXT、IMAGE）
+            if (obj.type === 'LINE' || obj.type === 'ARROW') {
+              (obj as LineObject | ArrowObject).lineStyle = style;
+            } else if (obj.type === 'RECTANGLE') {
+              (obj as RectObject).lineStyle = style;
+            } else if (obj.type === 'CIRCLE') {
+              (obj as CircleObject).lineStyle = style;
+            } else if (obj.type === 'POLYGON') {
+              (obj as PolygonObject).lineStyle = style;
+            } else if (obj.type === 'TRIANGLE') {
+              (obj as TriangleObject).lineStyle = style;
+            } else if (obj.type === 'STAR') {
+              (obj as StarObject).lineStyle = style;
+            } else if (obj.type === 'HEART') {
+              (obj as HeartObject).lineStyle = style;
+            } else if (obj.type === 'DIAMOND') {
+              (obj as DiamondObject).lineStyle = style;
+            }
+          });
+          this.renderCanvas();
+          this.dispatchChangeEvent();
+        }
+      });
+    });
+
+    // 滤镜控制器
+    const filterBrightness = this.shadow.querySelector('.filter-brightness') as HTMLInputElement;
+    const filterContrast = this.shadow.querySelector('.filter-contrast') as HTMLInputElement;
+    const filterResetBtn = this.shadow.querySelector('.filter-reset-btn');
+
+    const updateFilterValue = (slider: HTMLInputElement) => {
+      const valueSpan = slider.parentElement?.querySelector('.filter-value');
+      if (valueSpan) {
+        valueSpan.textContent = `${slider.value}%`;
+      }
+    };
+
+    // 实时更新滤镜（不保存历史）
+    const applyFiltersToSelectedImage = (saveToHistory: boolean = false) => {
+      const selectedObjs = this.getSelectedObjects();
+      const imageObj = selectedObjs.find(o => o.type === 'IMAGE') as ImageObject | undefined;
+      if (imageObj) {
+        if (saveToHistory) {
+          this.saveHistory();
+        }
+        if (!imageObj.filters) {
+          imageObj.filters = {};
+        }
+        imageObj.filters.brightness = parseInt(filterBrightness?.value || '100');
+        imageObj.filters.contrast = parseInt(filterContrast?.value || '100');
+        this.renderCanvas();
+        if (saveToHistory) {
+          this.dispatchChangeEvent();
+        }
+      }
+    };
+
+    if (filterBrightness) {
+      // 实时预览（拖动时）
+      filterBrightness.addEventListener('input', () => {
+        updateFilterValue(filterBrightness);
+        applyFiltersToSelectedImage(false);
+      });
+      // 释放时保存历史
+      filterBrightness.addEventListener('change', () => {
+        applyFiltersToSelectedImage(true);
+      });
+    }
+
+    if (filterContrast) {
+      // 实时预览（拖动时）
+      filterContrast.addEventListener('input', () => {
+        updateFilterValue(filterContrast);
+        applyFiltersToSelectedImage(false);
+      });
+      // 释放时保存历史
+      filterContrast.addEventListener('change', () => {
+        applyFiltersToSelectedImage(true);
+      });
+    }
+
+    if (filterResetBtn) {
+      filterResetBtn.addEventListener('click', () => {
+        const selectedObjs = this.getSelectedObjects();
+        const imageObj = selectedObjs.find(o => o.type === 'IMAGE') as ImageObject | undefined;
+        if (imageObj) {
+          this.saveHistory();
+          // 重置滤镜值为默认值
+          imageObj.filters = { brightness: 100, contrast: 100 };
+          // 同步更新滑块值和显示
+          if (filterBrightness) {
+            filterBrightness.value = '100';
+            updateFilterValue(filterBrightness);
+          }
+          if (filterContrast) {
+            filterContrast.value = '100';
+            updateFilterValue(filterContrast);
+          }
+          this.renderCanvas();
+          this.dispatchChangeEvent();
+        }
+      });
+    }
 
     // 颜色选择器
     const colorPicker = this.shadow.querySelector('.color-picker') as HTMLInputElement;
@@ -3206,6 +6178,11 @@ export class CanvasDrawingEditor extends HTMLElement {
       'line-icon': '<line x1="5" y1="19" x2="19" y2="5"/>',
       'arrow-icon': '<line x1="5" y1="19" x2="19" y2="5"/><polyline points="19 12 19 5 12 5"/>',
       'polygon-icon': '<polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/>',
+      'triangle-icon': '<polygon points="12 3 22 21 2 21"/>',
+      'star-icon': '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+      'heart-icon': '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>',
+      'diamond-icon': '<polygon points="12 2 22 12 12 22 2 12"/>',
+      'bezier-icon': '<path d="M3 17c3-6 9-6 12 0s9 6 12 0"/><circle cx="3" cy="17" r="2"/><circle cx="21" cy="17" r="2"/>',
     };
     const isActive = this.tool === tool;
     return `
@@ -3215,6 +6192,22 @@ export class CanvasDrawingEditor extends HTMLElement {
         </svg>
       </button>
     `;
+  }
+
+  // 应用线条样式
+  private applyLineStyle(ctx: CanvasRenderingContext2D, lineStyle?: LineStyle): void {
+    switch (lineStyle) {
+      case 'dashed':
+        ctx.setLineDash([10, 5]);
+        break;
+      case 'dotted':
+        ctx.setLineDash([3, 3]);
+        break;
+      case 'solid':
+      default:
+        ctx.setLineDash([]);
+        break;
+    }
   }
 
   // 将 hex 颜色转换为 rgba
@@ -3262,6 +6255,7 @@ export class CanvasDrawingEditor extends HTMLElement {
         width: 100%;
         height: 100%;
         background: #f1f5f9;
+        position: relative;
       }
 
       /* 工具栏 */
@@ -3396,6 +6390,161 @@ export class CanvasDrawingEditor extends HTMLElement {
         flex: 1;
       }
 
+      /* 线条样式选择器 */
+      .line-style-group {
+        display: flex;
+        gap: 2px;
+        padding: 4px;
+        background: #f1f5f9;
+        border-radius: 6px;
+        flex-shrink: 0;
+      }
+
+      .line-style-btn {
+        width: 28px;
+        height: 28px;
+        padding: 4px;
+        border-radius: 4px;
+      }
+
+      .line-style-btn.active {
+        background: var(--theme-color, ${DEFAULT_THEME_COLOR});
+        color: white;
+      }
+
+      /* 滤镜控制面板 */
+      .filter-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 12px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        flex-wrap: wrap;
+        flex-shrink: 0;
+      }
+
+      .filter-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748b;
+        flex-shrink: 0;
+      }
+
+      .filter-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+
+      .filter-item label {
+        font-size: 11px;
+        color: #64748b;
+        min-width: 32px;
+      }
+
+      .filter-slider {
+        width: 80px;
+        height: 20px;
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+        cursor: pointer;
+        margin: 0;
+        padding: 0;
+        position: relative;
+      }
+
+      .filter-slider::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 6px;
+        background: #e2e8f0;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+
+      .filter-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        background: var(--theme-color, ${DEFAULT_THEME_COLOR});
+        border-radius: 50%;
+        cursor: pointer;
+        margin-top: -5px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      }
+
+      .filter-slider::-webkit-slider-thumb:hover {
+        transform: scale(1.1);
+      }
+
+      .filter-slider::-moz-range-track {
+        width: 100%;
+        height: 6px;
+        background: #e2e8f0;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+
+      .filter-slider::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        background: var(--theme-color, ${DEFAULT_THEME_COLOR});
+        border-radius: 50%;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      }
+
+      .filter-slider::-moz-range-thumb:hover {
+        transform: scale(1.1);
+      }
+
+      /* 增加滑块点击区域 */
+      .filter-slider:focus {
+        outline: none;
+      }
+
+      .filter-slider:focus::-webkit-slider-thumb {
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+      }
+
+      .filter-slider:focus::-moz-range-thumb {
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+      }
+
+      .filter-value {
+        font-size: 11px;
+        color: #64748b;
+        min-width: 35px;
+        text-align: right;
+      }
+
+      .filter-reset-btn {
+        background: none;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+      }
+
+      .filter-reset-btn:hover {
+        background: #e2e8f0;
+        color: #334155;
+      }
+
+      .filter-reset-btn .icon {
+        width: 16px;
+        height: 16px;
+      }
+
       .color-picker {
         width: 32px;
         height: 32px;
@@ -3426,20 +6575,32 @@ export class CanvasDrawingEditor extends HTMLElement {
 
       /* 顶部栏 */
       .top-bar {
-        height: 56px;
+        min-height: 56px;
         background: #ffffff;
         border-bottom: 1px solid #e2e8f0;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 16px;
+        padding: 8px 16px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        flex-wrap: wrap;
+        gap: 8px;
       }
 
-      .top-bar-left, .top-bar-right {
+      .top-bar-left {
         display: flex;
         align-items: center;
         gap: 16px;
+        flex-shrink: 0;
+      }
+
+      .top-bar-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        flex: 1;
+        justify-content: flex-end;
       }
 
       .title {
@@ -3491,6 +6652,7 @@ export class CanvasDrawingEditor extends HTMLElement {
         border-radius: 8px;
         padding: 4px;
         gap: 2px;
+        flex-shrink: 0;
       }
 
       .align-btn {
@@ -3528,6 +6690,7 @@ export class CanvasDrawingEditor extends HTMLElement {
         background: #f1f5f9;
         border-radius: 8px;
         padding: 4px;
+        flex-shrink: 0;
       }
 
       .zoom-btn, .file-btn {
@@ -3670,6 +6833,362 @@ export class CanvasDrawingEditor extends HTMLElement {
         outline: none;
         min-width: 200px;
         font-size: 16px;
+      }
+
+      /* 富文本编辑器 */
+      .rich-text-editor {
+        position: absolute;
+        z-index: 30;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        min-width: 320px;
+        max-width: 480px;
+        overflow: hidden;
+      }
+
+      .rich-text-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 8px 12px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .rich-text-btn {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #475569;
+        transition: all 0.15s;
+      }
+
+      .rich-text-btn:hover {
+        background: #e2e8f0;
+        color: var(--theme-color);
+      }
+
+      .rich-text-btn.active {
+        background: var(--theme-color);
+        color: #ffffff;
+      }
+
+      .rich-text-divider {
+        width: 1px;
+        height: 20px;
+        background: #e2e8f0;
+        margin: 0 4px;
+      }
+
+      .rich-text-color {
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        padding: 2px;
+      }
+
+      .rich-text-fontsize {
+        width: 50px;
+        height: 32px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0 6px;
+        font-size: 13px;
+        text-align: center;
+      }
+
+      .rich-text-segments {
+        padding: 12px;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+
+      .rich-text-segment {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        background: #f8fafc;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        border: 2px solid transparent;
+        transition: border-color 0.15s;
+      }
+
+      .rich-text-segment:last-child {
+        margin-bottom: 0;
+      }
+
+      .rich-text-segment.selected {
+        border-color: var(--theme-color);
+      }
+
+      .rich-text-segment-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        font-size: 14px;
+        outline: none;
+        padding: 4px;
+      }
+
+      .rich-text-segment-preview {
+        padding: 4px 8px;
+        border-radius: 4px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        font-size: 12px;
+        min-width: 60px;
+        text-align: center;
+      }
+
+      .rich-text-segment-delete {
+        width: 24px;
+        height: 24px;
+        border: none;
+        background: transparent;
+        border-radius: 4px;
+        cursor: pointer;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .rich-text-segment-delete:hover {
+        background: #fee2e2;
+        color: #ef4444;
+      }
+
+      .rich-text-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 12px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .rich-text-action-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .rich-text-action-btn.cancel {
+        background: #f1f5f9;
+        color: #475569;
+      }
+
+      .rich-text-action-btn.cancel:hover {
+        background: #e2e8f0;
+      }
+
+      .rich-text-action-btn.confirm {
+        background: var(--theme-color);
+        color: #ffffff;
+      }
+
+      .rich-text-action-btn.confirm:hover {
+        filter: brightness(0.9);
+      }
+
+      /* 动画时间线编辑器 */
+      .timeline-editor {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 30;
+        background: #1e293b;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        min-width: 600px;
+        max-width: 90%;
+        color: #e2e8f0;
+        overflow: hidden;
+      }
+
+      .timeline-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 16px;
+        background: #0f172a;
+        border-bottom: 1px solid #334155;
+      }
+
+      .timeline-title {
+        font-weight: 600;
+        font-size: 14px;
+        flex: 1;
+      }
+
+      .timeline-controls {
+        display: flex;
+        gap: 8px;
+      }
+
+      .timeline-btn {
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 6px;
+        background: #334155;
+        color: #e2e8f0;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.15s;
+      }
+
+      .timeline-btn:hover {
+        background: #475569;
+      }
+
+      .timeline-btn.play:hover {
+        background: #22c55e;
+      }
+
+      .timeline-close {
+        width: 28px;
+        height: 28px;
+        border: none;
+        border-radius: 6px;
+        background: transparent;
+        color: #94a3b8;
+        cursor: pointer;
+        font-size: 18px;
+        transition: all 0.15s;
+      }
+
+      .timeline-close:hover {
+        background: #ef4444;
+        color: #ffffff;
+      }
+
+      .timeline-content {
+        padding: 16px;
+        min-height: 120px;
+      }
+
+      .timeline-tracks {
+        min-height: 60px;
+        background: #0f172a;
+        border-radius: 6px;
+        margin-bottom: 12px;
+        padding: 8px;
+      }
+
+      .timeline-track {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 0;
+        border-bottom: 1px solid #334155;
+      }
+
+      .timeline-track:last-child {
+        border-bottom: none;
+      }
+
+      .timeline-track-label {
+        min-width: 80px;
+        font-size: 12px;
+        color: #94a3b8;
+      }
+
+      .timeline-track-bar {
+        flex: 1;
+        height: 24px;
+        background: #1e293b;
+        border-radius: 4px;
+        position: relative;
+      }
+
+      .timeline-keyframe {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        background: var(--theme-color);
+        border-radius: 2px;
+        transform: rotate(45deg) translateY(-50%);
+        top: 50%;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .timeline-keyframe:hover {
+        transform: rotate(45deg) translateY(-50%) scale(1.2);
+      }
+
+      .timeline-ruler {
+        height: 24px;
+        background: #0f172a;
+        border-radius: 4px;
+        position: relative;
+      }
+
+      .timeline-playhead {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 2px;
+        height: 100%;
+        background: #ef4444;
+        transition: left 0.05s linear;
+      }
+
+      .timeline-playhead::before {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        width: 10px;
+        height: 10px;
+        background: #ef4444;
+        border-radius: 50%;
+      }
+
+      .timeline-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        background: #0f172a;
+        border-top: 1px solid #334155;
+      }
+
+      .timeline-add-keyframe {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        background: var(--theme-color);
+        color: #ffffff;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .timeline-add-keyframe:hover {
+        filter: brightness(0.9);
+      }
+
+      .timeline-time {
+        font-size: 13px;
+        font-family: monospace;
+        color: #94a3b8;
       }
 
       /* 空画布提示 */
@@ -3956,6 +7475,100 @@ export class CanvasDrawingEditor extends HTMLElement {
 
       .hotzone-btn-save:hover {
         filter: brightness(0.9);
+      }
+
+      /* ========== 移动端响应式布局 ========== */
+      @media (max-width: 768px) {
+        .editor-container {
+          flex-direction: column;
+        }
+
+        .toolbar {
+          width: 100%;
+          height: auto;
+          flex-direction: row;
+          flex-wrap: wrap;
+          border-right: none;
+          border-bottom: 1px solid #e2e8f0;
+          padding: 8px;
+          gap: 4px;
+          order: -1;
+        }
+
+        .tool-btn {
+          width: 40px;
+          height: 40px;
+          min-width: 40px;
+        }
+
+        .divider {
+          width: 1px;
+          height: 24px;
+          margin: 0 4px;
+        }
+
+        .property-panel {
+          width: 100%;
+          height: auto;
+          max-height: 200px;
+          border-left: none;
+          border-top: 1px solid #e2e8f0;
+          overflow-x: auto;
+          flex-direction: row;
+          flex-wrap: wrap;
+        }
+
+        .property-group {
+          flex-direction: row;
+          flex-wrap: wrap;
+          padding: 8px;
+        }
+
+        .file-controls {
+          flex-wrap: wrap;
+        }
+
+        .zoom-controls {
+          flex-wrap: wrap;
+        }
+
+        .bottom-toolbar {
+          flex-wrap: wrap;
+          padding: 8px;
+          gap: 8px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .toolbar {
+          justify-content: center;
+        }
+
+        .tool-btn {
+          width: 36px;
+          height: 36px;
+        }
+
+        .property-panel {
+          max-height: 150px;
+        }
+
+        .canvas-container {
+          min-height: 300px;
+        }
+      }
+
+      /* 触摸设备优化 */
+      @media (pointer: coarse) {
+        .tool-btn, .file-btn, .zoom-btn, .align-btn {
+          min-width: 44px;
+          min-height: 44px;
+        }
+
+        .tool-btn:active, .file-btn:active, .zoom-btn:active {
+          transform: scale(0.95);
+          background: ${hoverBgColor};
+        }
       }
     `;
   }
