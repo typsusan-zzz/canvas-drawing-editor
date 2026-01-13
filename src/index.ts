@@ -23,5 +23,9 @@ export {
   type EasingFunction,
   type TweenConfig,
   type TweenProps,
-  type TweenInstance
+  type TweenInstance,
+  // 形状选择器面板相关导出
+  type PresetShapeType,
+  type ShapeConfig,
+  type ShapePanelConfig
 } from './core/CanvasDrawingEditor';

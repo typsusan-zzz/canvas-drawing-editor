@@ -394,6 +394,22 @@
                 支持描边、填充、描边+填充三种模式，让形状更加丰富多彩。
               </p>
             </div>
+            <!-- 特性卡片 11: 形状库 -->
+            <div
+              class="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100"
+            >
+              <div
+                class="flex items-center justify-center h-12 w-12 rounded-full bg-cyan-100 text-cyan-500 mb-4"
+              >
+                <i class="fas fa-shapes text-xl"> </i>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="features.shapelib.title">
+                📐 形状库
+              </h3>
+              <p class="text-gray-600" data-i18n="features.shapelib.desc">
+                注册自定义形状，支持带文字的组合形状，可搜索选择快速添加到画布。
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -685,6 +701,7 @@ export class AppModule { }
                   <tr class="bg-gray-50"><td class="px-4 py-3 border-b font-mono text-indigo-600">show-layers</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.layers">显示图层管理</td></tr>
                   <tr><td class="px-4 py-3 border-b font-mono text-indigo-600">show-group</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.group">显示组合/解组</td></tr>
                   <tr class="bg-gray-50"><td class="px-4 py-3 border-b font-mono text-indigo-600">show-align</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.align">显示对齐/分布</td></tr>
+                  <tr><td class="px-4 py-3 border-b font-mono text-cyan-600">show-shape-panel</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.shapePanel">显示形状库面板</td></tr>
                 </tbody>
               </table>
             </div>
@@ -848,6 +865,81 @@ export class AppModule { }
     "description": "用户姓名"     // 描述（可选）
   }
 }</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- 形状库 API 说明 -->
+          <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-100 mt-12">
+            <h3 class="text-2xl font-bold mb-6 flex items-center text-gray-800">
+              <i class="fas fa-shapes mr-3 text-cyan-500"></i>
+              <span data-i18n="docs.shapelib.title">形状库 API</span>
+            </h3>
+            <p class="text-gray-600 mb-6" data-i18n="docs.shapelib.intro">形状库功能允许注册自定义形状，用户可以从形状面板中选择并添加到画布。</p>
+
+            <!-- 注册形状 -->
+            <div class="mb-8">
+              <h4 class="font-bold text-lg text-gray-800 mb-3" data-i18n="docs.shapelib.register">注册形状</h4>
+              <div class="bg-gray-800 p-4 rounded-lg overflow-x-auto mb-3">
+                <pre class="m-0"><code class="text-sm text-green-400">const editor = document.querySelector('canvas-drawing-editor');
+
+// 注册自定义形状
+editor.registerShapes([
+  {
+    id: 'btn-confirm',
+    name: '确认按钮',
+    type: 'roundedRect',
+    category: '按钮',
+    fillColor: '#22c55e',
+    fillMode: 'fill',
+    cornerRadius: 8,
+    width: 100,
+    height: 40,
+    text: '确认',
+    textColor: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold'
+  }
+]);</code></pre>
+              </div>
+            </div>
+
+            <!-- 监听事件 -->
+            <div class="mb-8">
+              <h4 class="font-bold text-lg text-gray-800 mb-3" data-i18n="docs.shapelib.event">监听形状添加事件</h4>
+              <div class="bg-gray-800 p-4 rounded-lg overflow-x-auto mb-3">
+                <pre class="m-0"><code class="text-sm text-green-400">editor.addEventListener('shape-added', (e) => {
+  console.log('形状已添加:', e.detail.shape.name);
+  console.log('创建的对象:', e.detail.object);
+});</code></pre>
+              </div>
+            </div>
+
+            <!-- 配置属性表格 -->
+            <div>
+              <h4 class="font-bold text-lg text-gray-800 mb-3" data-i18n="docs.shapelib.config">形状配置属性</h4>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                  <thead>
+                    <tr class="bg-gray-50">
+                      <th class="px-4 py-2 font-semibold text-gray-700 border-b">属性</th>
+                      <th class="px-4 py-2 font-semibold text-gray-700 border-b">类型</th>
+                      <th class="px-4 py-2 font-semibold text-gray-700 border-b">说明</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-gray-600">
+                    <tr><td class="px-4 py-2 border-b font-mono text-indigo-600">id</td><td class="px-4 py-2 border-b">string</td><td class="px-4 py-2 border-b">形状唯一标识</td></tr>
+                    <tr class="bg-gray-50"><td class="px-4 py-2 border-b font-mono text-indigo-600">name</td><td class="px-4 py-2 border-b">string</td><td class="px-4 py-2 border-b">形状名称（显示用）</td></tr>
+                    <tr><td class="px-4 py-2 border-b font-mono text-indigo-600">type</td><td class="px-4 py-2 border-b">string</td><td class="px-4 py-2 border-b">形状类型：rectangle, circle, triangle, star, heart, diamond, ellipse, roundedRect 等</td></tr>
+                    <tr class="bg-gray-50"><td class="px-4 py-2 border-b font-mono text-indigo-600">category</td><td class="px-4 py-2 border-b">string</td><td class="px-4 py-2 border-b">分类名称（可选）</td></tr>
+                    <tr><td class="px-4 py-2 border-b font-mono text-indigo-600">fillColor</td><td class="px-4 py-2 border-b">string</td><td class="px-4 py-2 border-b">填充颜色</td></tr>
+                    <tr class="bg-gray-50"><td class="px-4 py-2 border-b font-mono text-indigo-600">fillMode</td><td class="px-4 py-2 border-b">string</td><td class="px-4 py-2 border-b">填充模式：stroke, fill, both</td></tr>
+                    <tr><td class="px-4 py-2 border-b font-mono text-indigo-600">text</td><td class="px-4 py-2 border-b">string</td><td class="px-4 py-2 border-b">形状中心文字</td></tr>
+                    <tr class="bg-gray-50"><td class="px-4 py-2 border-b font-mono text-indigo-600">textColor</td><td class="px-4 py-2 border-b">string</td><td class="px-4 py-2 border-b">文字颜色</td></tr>
+                    <tr><td class="px-4 py-2 border-b font-mono text-indigo-600">fontSize</td><td class="px-4 py-2 border-b">number</td><td class="px-4 py-2 border-b">文字大小</td></tr>
+                    <tr class="bg-gray-50"><td class="px-4 py-2 border-b font-mono text-indigo-600">width, height</td><td class="px-4 py-2 border-b">number</td><td class="px-4 py-2 border-b">默认宽高</td></tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -1027,6 +1119,14 @@ export class AppModule { }
           'features.mobile.desc': '单指拖拽、双指缩放/旋转、长按选择，工具栏响应式布局。',
           'features.shapes.title': '⭐ 丰富形状',
           'features.shapes.desc': '星形、心形、三角形、菱形、贝塞尔曲线与平滑曲线，配合描边/填充/描边+填充三种填充模式，赋予形状更多层次感。',
+          'features.shapelib.title': '📐 形状库',
+          'features.shapelib.desc': '注册自定义形状，支持带文字的组合形状，可搜索选择快速添加到画布。',
+          'config.attr.shapePanel': '显示形状库面板',
+          'docs.shapelib.title': '形状库 API',
+          'docs.shapelib.intro': '形状库功能允许注册自定义形状，用户可以从形状面板中选择并添加到画布。',
+          'docs.shapelib.register': '注册形状',
+          'docs.shapelib.event': '监听形状添加事件',
+          'docs.shapelib.config': '形状配置属性',
         },
         en: {
           'nav.features': 'Features',
@@ -1059,6 +1159,14 @@ export class AppModule { }
           'features.shapes.desc': 'Star, heart, triangle, diamond, bezier curves, smooth curves and more shapes for complex design needs.',
           'features.fillmode.title': '🎨 Fill Modes',
           'features.fillmode.desc': 'Supports stroke, fill, and stroke+fill modes to make shapes more colorful.',
+          'features.shapelib.title': '📐 Shape Library',
+          'features.shapelib.desc': 'Register custom shapes with text, searchable panel for quick selection and adding to canvas.',
+          'config.attr.shapePanel': 'Show shape library panel',
+          'docs.shapelib.title': 'Shape Library API',
+          'docs.shapelib.intro': 'The Shape Library feature allows registering custom shapes that users can select from a panel and add to the canvas.',
+          'docs.shapelib.register': 'Register Shapes',
+          'docs.shapelib.event': 'Listen for Shape Added Event',
+          'docs.shapelib.config': 'Shape Configuration Properties',
           'install.subtitle': 'Quick Start',
           'install.title': '📦 Installation & Integration',
           'install.npm': '<i class="fab fa-npm mr-3 text-red-500"></i> NPM Install',

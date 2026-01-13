@@ -40,6 +40,7 @@
 - 🖋️ **富文本** - 支持部分加粗、部分改色、部分斜体
 - 🎬 **Tween 动画** - 对象属性过渡动画（位置、大小、透明度等）
 - 📱 **移动端支持** - 单指拖拽、双指缩放/旋转、长按选择、响应式布局
+- 📐 **形状库** - 注册自定义形状，支持带文字的组合形状，可搜索选择
 
 ### 📦 安装
 
@@ -196,6 +197,7 @@ export class AppModule { }
 | `layers` | boolean | true | 图层管理 |
 | `group` | boolean | true | 组合/解组 |
 | `align` | boolean | true | 对齐/分布 |
+| `shapePanel` | boolean | true | 形状库面板 |
 
 #### 旧版属性（向后兼容）
 
@@ -455,6 +457,94 @@ document.addEventListener('animation-update', (e) => {
 }
 ```
 
+### 📐 形状库 API
+
+形状库功能允许你注册自定义形状，用户可以从形状面板中选择并添加到画布。
+
+#### 注册形状
+
+```javascript
+const editor = document.querySelector('canvas-drawing-editor');
+
+// 注册单个或多个形状
+editor.registerShapes([
+  {
+    id: 'btn-confirm',
+    name: '确认按钮',
+    type: 'roundedRect',
+    category: '按钮',
+    fillColor: '#22c55e',
+    fillMode: 'fill',
+    cornerRadius: 8,
+    width: 100,
+    height: 40,
+    text: '确认',
+    textColor: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold'
+  },
+  {
+    id: 'flow-start',
+    name: '开始节点',
+    type: 'ellipse',
+    category: '流程图',
+    fillColor: '#dbeafe',
+    fillMode: 'both',
+    strokeColor: '#3b82f6',
+    strokeWidth: 2,
+    width: 100,
+    height: 60,
+    text: '开始',
+    textColor: '#1e40af'
+  }
+]);
+```
+
+#### 形状配置属性
+
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| `id` | string | 形状唯一标识 |
+| `name` | string | 形状名称（显示用） |
+| `type` | string | 形状类型：`rectangle`, `circle`, `triangle`, `star`, `heart`, `diamond`, `polygon`, `ellipse`, `roundedRect`, `parallelogram`, `trapezoid`, `hexagon` |
+| `category` | string | 分类名称（可选） |
+| `fillColor` | string | 填充颜色 |
+| `fillMode` | string | 填充模式：`stroke`, `fill`, `both` |
+| `strokeColor` | string | 边框颜色 |
+| `strokeWidth` | number | 边框宽度 |
+| `width` | number | 默认宽度 |
+| `height` | number | 默认高度 |
+| `cornerRadius` | number | 圆角半径（圆角矩形） |
+| `text` | string | 形状中心文字 |
+| `textColor` | string | 文字颜色 |
+| `fontSize` | number | 文字大小 |
+| `fontWeight` | string | 文字粗细：`normal`, `bold` |
+| `icon` | string | 自定义 SVG 图标（面板显示用） |
+
+#### 监听形状添加事件
+
+```javascript
+editor.addEventListener('shape-added', (e) => {
+  console.log('形状已添加:', e.detail.shape.name);
+  console.log('创建的对象:', e.detail.object);
+});
+```
+
+#### 工具配置
+
+通过 `tool-config` 或 `show-shape-panel` 属性控制形状库按钮显示：
+
+```html
+<canvas-drawing-editor
+  tool-config='{"shapePanel": true}'
+></canvas-drawing-editor>
+
+<!-- 或使用单独属性 -->
+<canvas-drawing-editor
+  show-shape-panel="true"
+></canvas-drawing-editor>
+```
+
 ### 🎬 Tween 动画 API
 
 通过 `tweenAnimate()` 方法可以为对象创建平滑的属性过渡动画：
@@ -528,6 +618,7 @@ A powerful canvas-based drawing editor Web Component with **zero dependencies**.
 - 🖋️ **Rich Text** - Support partial bold, partial color, partial italic
 - 🎬 **Tween Animation** - Object property transition animations (position, size, opacity, etc.)
 - 📱 **Mobile Support** - Single finger drag, two-finger zoom/rotate, long press selection, responsive layout
+- 📐 **Shape Library** - Register custom shapes with text, searchable panel for quick selection
 
 ### 📦 Installation
 
@@ -684,6 +775,7 @@ Recommended: Use `tool-config` attribute for unified tool configuration:
 | `layers` | boolean | true | Layer management |
 | `group` | boolean | true | Group/Ungroup |
 | `align` | boolean | true | Align/Distribute |
+| `shapePanel` | boolean | true | Shape library panel |
 
 #### Legacy Attributes (Backward Compatible)
 
@@ -914,6 +1006,94 @@ Steps:
     "description": "User name"    // Description (optional)
   }
 }
+```
+
+### 📐 Shape Library API
+
+The Shape Library feature allows you to register custom shapes that users can select from a panel and add to the canvas.
+
+#### Register Shapes
+
+```javascript
+const editor = document.querySelector('canvas-drawing-editor');
+
+// Register one or more shapes
+editor.registerShapes([
+  {
+    id: 'btn-confirm',
+    name: 'Confirm Button',
+    type: 'roundedRect',
+    category: 'Buttons',
+    fillColor: '#22c55e',
+    fillMode: 'fill',
+    cornerRadius: 8,
+    width: 100,
+    height: 40,
+    text: 'Confirm',
+    textColor: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold'
+  },
+  {
+    id: 'flow-start',
+    name: 'Start Node',
+    type: 'ellipse',
+    category: 'Flowchart',
+    fillColor: '#dbeafe',
+    fillMode: 'both',
+    strokeColor: '#3b82f6',
+    strokeWidth: 2,
+    width: 100,
+    height: 60,
+    text: 'Start',
+    textColor: '#1e40af'
+  }
+]);
+```
+
+#### Shape Configuration Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | string | Unique shape identifier |
+| `name` | string | Shape name (for display) |
+| `type` | string | Shape type: `rectangle`, `circle`, `triangle`, `star`, `heart`, `diamond`, `polygon`, `ellipse`, `roundedRect`, `parallelogram`, `trapezoid`, `hexagon` |
+| `category` | string | Category name (optional) |
+| `fillColor` | string | Fill color |
+| `fillMode` | string | Fill mode: `stroke`, `fill`, `both` |
+| `strokeColor` | string | Stroke color |
+| `strokeWidth` | number | Stroke width |
+| `width` | number | Default width |
+| `height` | number | Default height |
+| `cornerRadius` | number | Corner radius (for rounded rectangles) |
+| `text` | string | Center text content |
+| `textColor` | string | Text color |
+| `fontSize` | number | Font size |
+| `fontWeight` | string | Font weight: `normal`, `bold` |
+| `icon` | string | Custom SVG icon (for panel display) |
+
+#### Listen for Shape Added Event
+
+```javascript
+editor.addEventListener('shape-added', (e) => {
+  console.log('Shape added:', e.detail.shape.name);
+  console.log('Created object:', e.detail.object);
+});
+```
+
+#### Tool Configuration
+
+Control shape library button visibility via `tool-config` or `show-shape-panel` attribute:
+
+```html
+<canvas-drawing-editor
+  tool-config='{"shapePanel": true}'
+></canvas-drawing-editor>
+
+<!-- Or use individual attribute -->
+<canvas-drawing-editor
+  show-shape-panel="true"
+></canvas-drawing-editor>
 ```
 
 ### 🎬 Tween Animation API

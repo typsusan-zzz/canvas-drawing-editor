@@ -263,7 +263,27 @@
                 <span class="text-xs text-gray-600"><i class="fas fa-align-left mr-1"></i>对齐</span>
                 <div id="tool-align" class="toggle-switch active" onclick="toggleTool(this, 'align')"></div>
               </div>
+              <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span class="text-xs text-gray-600"><i class="fas fa-shapes mr-1"></i>形状库</span>
+                <div id="tool-shapePanel" class="toggle-switch active" onclick="toggleTool(this, 'shapePanel')"></div>
+              </div>
             </div>
+          </div>
+
+          <!-- 形状库演示 -->
+          <div class="config-section">
+            <h3 class="font-semibold text-gray-700 mb-3 text-sm">
+              <i class="fas fa-shapes text-cyan-500 mr-2"></i>形状库 API 演示
+            </h3>
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="registerDemoShapes()" class="p-2 bg-cyan-500 text-white rounded text-xs hover:bg-cyan-600">
+                <i class="fas fa-plus mr-1"></i>注册形状
+              </button>
+              <button onclick="clearShapes()" class="p-2 bg-gray-500 text-white rounded text-xs hover:bg-gray-600">
+                <i class="fas fa-trash mr-1"></i>清空形状
+              </button>
+            </div>
+            <p class="text-xs text-gray-400 mt-2">* 点击"注册形状"后，工具栏会出现形状库按钮</p>
           </div>
 
           <!-- 快捷操作 -->
@@ -388,7 +408,7 @@
       arrow: true, polygon: true, text: true, image: true,
       undo: true, redo: true, zoom: true, color: true,
       download: true, exportJson: true, importJson: true, clear: true,
-      layers: true, group: true, align: true
+      layers: true, group: true, align: true, shapePanel: true
     };
 
     // 日志函数
@@ -674,6 +694,106 @@
       editor.stopAllAnimations();
       log('所有动画已停止');
     }
+
+    // 注册演示形状
+    function registerDemoShapes() {
+      const shapes = [
+        {
+          id: 'btn-confirm',
+          name: '确认按钮',
+          type: 'roundedRect',
+          category: '按钮',
+          fillColor: '#22c55e',
+          fillMode: 'fill',
+          cornerRadius: 8,
+          width: 100,
+          height: 40,
+          text: '确认',
+          textColor: '#ffffff',
+          fontSize: 14,
+          fontWeight: 'bold'
+        },
+        {
+          id: 'btn-cancel',
+          name: '取消按钮',
+          type: 'roundedRect',
+          category: '按钮',
+          fillColor: '#ef4444',
+          fillMode: 'fill',
+          cornerRadius: 8,
+          width: 100,
+          height: 40,
+          text: '取消',
+          textColor: '#ffffff',
+          fontSize: 14,
+          fontWeight: 'bold'
+        },
+        {
+          id: 'flow-start',
+          name: '开始节点',
+          type: 'ellipse',
+          category: '流程图',
+          fillColor: '#dbeafe',
+          fillMode: 'both',
+          strokeColor: '#3b82f6',
+          strokeWidth: 2,
+          width: 100,
+          height: 60,
+          text: '开始',
+          textColor: '#1e40af',
+          fontSize: 14
+        },
+        {
+          id: 'flow-end',
+          name: '结束节点',
+          type: 'ellipse',
+          category: '流程图',
+          fillColor: '#fef3c7',
+          fillMode: 'both',
+          strokeColor: '#f59e0b',
+          strokeWidth: 2,
+          width: 100,
+          height: 60,
+          text: '结束',
+          textColor: '#92400e',
+          fontSize: 14
+        },
+        {
+          id: 'shape-star',
+          name: '五角星',
+          type: 'star',
+          category: '基础形状',
+          fillColor: '#fbbf24',
+          fillMode: 'fill',
+          width: 80,
+          height: 80
+        },
+        {
+          id: 'shape-heart',
+          name: '爱心',
+          type: 'heart',
+          category: '基础形状',
+          fillColor: '#ec4899',
+          fillMode: 'fill',
+          width: 80,
+          height: 80
+        }
+      ];
+
+      editor.registerShapes(shapes);
+      log(`已注册 ${shapes.length} 个形状到形状库`);
+    }
+
+    // 清空形状库
+    function clearShapes() {
+      editor.registerShapes([]);
+      log('形状库已清空');
+    }
+
+    // 监听形状添加事件
+    editor.addEventListener('shape-added', (e) => {
+      log(`形状已添加: ${e.detail.shape.name}`);
+    });
 
     log('编辑器已加载，热区功能已启用！');
     log('画布中的「文本内容」会实时显示当前时间和问候语');

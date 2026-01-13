@@ -321,6 +321,56 @@ export type CanvasObject = RectObject | CircleObject | PathObject | TextObject |
 
 export type LangType = 'zh' | 'en';
 
+// ========== 形状选择器面板 API ==========
+
+// 预定义形状类型
+export type PresetShapeType = 'rectangle' | 'circle' | 'triangle' | 'star' | 'heart' | 'diamond' | 'polygon' | 'ellipse' | 'roundedRect' | 'parallelogram' | 'trapezoid' | 'hexagon' | 'octagon' | 'cross' | 'arrow' | 'callout' | 'cloud' | 'lightning' | 'custom';
+
+// 形状配置接口
+export interface ShapeConfig {
+  id: string;                          // 形状唯一标识
+  name: string;                        // 形状名称（显示用）
+  type: PresetShapeType;               // 形状类型
+  // 外观属性
+  fillColor?: string;                  // 填充颜色
+  fillMode?: FillMode;                 // 填充模式：stroke | fill | both
+  strokeColor?: string;                // 边框颜色
+  strokeWidth?: number;                // 边框宽度
+  strokeStyle?: LineStyle;             // 边框样式：solid | dashed | dotted
+  opacity?: number;                    // 透明度 0-1
+  // 文字属性（形状中心的文字）
+  text?: string;                       // 文字内容
+  textColor?: string;                  // 文字颜色
+  fontSize?: number;                   // 字体大小
+  fontFamily?: string;                 // 字体
+  fontWeight?: 'normal' | 'bold';      // 字体粗细
+  fontStyle?: 'normal' | 'italic';     // 字体样式
+  textAlign?: 'left' | 'center' | 'right';  // 文字对齐
+  // 尺寸属性
+  width?: number;                      // 默认宽度
+  height?: number;                     // 默认高度
+  // 特殊形状属性
+  cornerRadius?: number;               // 圆角半径（圆角矩形）
+  sides?: number;                      // 边数（多边形）
+  points?: number;                     // 角数（星形）
+  innerRadius?: number;                // 内半径（星形）
+  // 自定义路径（type为custom时使用）
+  customPath?: string;                 // SVG path 数据
+  // 图标（用于面板显示）
+  icon?: string;                       // SVG 图标内容
+  // 分组
+  category?: string;                   // 分类名称
+}
+
+// 形状面板配置
+export interface ShapePanelConfig {
+  columns?: number;                    // 列数，默认4
+  itemWidth?: number;                  // 每个形状项的宽度，默认60
+  itemHeight?: number;                 // 每个形状项的高度，默认60
+  gap?: number;                        // 间距，默认8
+  maxHeight?: number;                  // 面板最大高度，默认400
+}
+
 // 工具配置接口（新的统一配置方式）
 export interface ToolConfig {
   // 基础绘图工具
@@ -357,6 +407,7 @@ export interface ToolConfig {
   layers?: boolean;       // 图层管理
   group?: boolean;        // 组合/解组
   align?: boolean;        // 对齐/分布
+  shapePanel?: boolean;   // 形状选择器面板
 }
 
 export interface EditorConfig {
@@ -510,6 +561,16 @@ const i18n: Record<LangType, Record<string, string>> = {
     touchPinch: '双指缩放',
     touchRotate: '双指旋转',
     longPress: '长按选择',
+    // 形状面板
+    shapePanel: '形状库',
+    shapePanelTitle: '选择形状',
+    basicShapes: '基础形状',
+    flowchartShapes: '流程图',
+    arrowShapes: '箭头',
+    calloutShapes: '标注',
+    customShapes: '自定义',
+    noShapes: '暂无形状',
+    addToCanvas: '添加到画布',
   },
   en: {
     select: 'Select (V)',
@@ -638,6 +699,16 @@ const i18n: Record<LangType, Record<string, string>> = {
     touchPinch: 'Pinch to Zoom',
     touchRotate: 'Rotate',
     longPress: 'Long Press to Select',
+    // Shape panel
+    shapePanel: 'Shape Library',
+    shapePanelTitle: 'Select Shape',
+    basicShapes: 'Basic Shapes',
+    flowchartShapes: 'Flowchart',
+    arrowShapes: 'Arrows',
+    calloutShapes: 'Callouts',
+    customShapes: 'Custom',
+    noShapes: 'No shapes available',
+    addToCanvas: 'Add to Canvas',
   },
 };
 
@@ -679,6 +750,7 @@ const defaultToolConfig: ToolConfig = {
   layers: true,
   group: true,
   align: true,
+  shapePanel: true,
 };
 
 // 默认配置
@@ -851,6 +923,19 @@ export class CanvasDrawingEditor extends HTMLElement {
   private readonly PINCH_THRESHOLD = 10;      // 捏合手势阈值（像素）
   private inertiaAnimationId: number | null = null;
 
+  // 形状选择器面板
+  private shapePanelElement!: HTMLDivElement;
+  private shapePanelVisible: boolean = false;
+  private registeredShapes: ShapeConfig[] = [];
+  private shapePanelConfig: ShapePanelConfig = {
+    columns: 4,
+    itemWidth: 60,
+    itemHeight: 60,
+    gap: 8,
+    maxHeight: 400
+  };
+  private pendingShapeConfig: ShapeConfig | null = null;  // 待添加到画布的形状配置
+
   constructor() {
     super();
     this.shadow = this.attachShadow({ mode: 'open' });
@@ -1000,6 +1085,7 @@ export class CanvasDrawingEditor extends HTMLElement {
         layers: this.getAttribute('show-layers') !== 'false',
         group: this.getAttribute('show-group') !== 'false',
         align: this.getAttribute('show-align') !== 'false',
+        shapePanel: this.getAttribute('show-shape-panel') !== 'false',
       };
     }
 
@@ -1321,13 +1407,23 @@ export class CanvasDrawingEditor extends HTMLElement {
       case 'TEXT': {
         const t = obj as TextObject;
         const width = this.measureTextWidth(t.text, t.fontSize);
-        return { x: t.x, y: t.y - t.fontSize, width, height: t.fontSize * 1.2 };
+        // 文本现在是居中绘制的，x,y 是中心点
+        return { x: t.x - width / 2, y: t.y - t.fontSize / 2, width, height: t.fontSize };
       }
       case 'RICH_TEXT': {
         const rt = obj as RichTextObject;
         const width = this.measureRichTextWidth(rt);
         const maxFontSize = this.getRichTextMaxFontSize(rt);
-        return { x: rt.x, y: rt.y - maxFontSize, width, height: maxFontSize * (rt.lineHeight || 1.2) };
+        const height = maxFontSize * (rt.lineHeight || 1.2);
+
+        // 根据 textAlign 计算边界
+        if (rt.textAlign === 'center') {
+          // 居中对齐：x,y 是中心点
+          return { x: rt.x - width / 2, y: rt.y - maxFontSize / 2, width, height };
+        } else if (rt.textAlign === 'right') {
+          return { x: rt.x - width, y: rt.y - maxFontSize, width, height };
+        }
+        return { x: rt.x, y: rt.y - maxFontSize, width, height };
       }
       case 'PATH': {
         const p = obj as PathObject;
@@ -1397,7 +1493,8 @@ export class CanvasDrawingEditor extends HTMLElement {
       }
       case 'GROUP': {
         const g = obj as GroupObject;
-        return { x: g.x, y: g.y, width: g.width, height: g.height };
+        // GROUP 的 x, y 是中心点，需要转换为左上角
+        return { x: g.x - g.width / 2, y: g.y - g.height / 2, width: g.width, height: g.height };
       }
     }
     return { x: 0, y: 0, width: 0, height: 0 };
@@ -1560,13 +1657,30 @@ export class CanvasDrawingEditor extends HTMLElement {
       case 'TEXT': {
         const t = obj as TextObject;
         const width = this.measureTextWidth(t.text, t.fontSize);
-        return localX >= t.x && localX <= t.x + width && localY >= t.y - t.fontSize && localY <= t.y + t.fontSize * 0.2;
+        // 文本现在是居中绘制的，x,y 是中心点
+        const left = t.x - width / 2;
+        const top = t.y - t.fontSize / 2;
+        return localX >= left && localX <= left + width && localY >= top && localY <= top + t.fontSize;
       }
       case 'RICH_TEXT': {
         const rt = obj as RichTextObject;
         const width = this.measureRichTextWidth(rt);
         const maxFontSize = this.getRichTextMaxFontSize(rt);
-        return localX >= rt.x && localX <= rt.x + width && localY >= rt.y - maxFontSize && localY <= rt.y + maxFontSize * 0.2;
+        const height = maxFontSize * (rt.lineHeight || 1.2);
+
+        // 根据 textAlign 计算边界
+        let left: number, top: number;
+        if (rt.textAlign === 'center') {
+          left = rt.x - width / 2;
+          top = rt.y - maxFontSize / 2;
+        } else if (rt.textAlign === 'right') {
+          left = rt.x - width;
+          top = rt.y - maxFontSize;
+        } else {
+          left = rt.x;
+          top = rt.y - maxFontSize;
+        }
+        return localX >= left && localX <= left + width && localY >= top && localY <= top + height;
       }
       case 'PATH': {
         const p = obj as PathObject;
@@ -1627,7 +1741,10 @@ export class CanvasDrawingEditor extends HTMLElement {
       }
       case 'GROUP': {
         const g = obj as GroupObject;
-        return localX >= g.x && localX <= g.x + g.width && localY >= g.y && localY <= g.y + g.height;
+        // GROUP 的 x, y 是中心点，需要转换为左上角进行检测
+        const left = g.x - g.width / 2;
+        const top = g.y - g.height / 2;
+        return localX >= left && localX <= left + g.width && localY >= top && localY <= top + g.height;
       }
     }
     return false;
@@ -3361,6 +3478,55 @@ export class CanvasDrawingEditor extends HTMLElement {
           }));
           break;
         }
+        case 'GROUP': {
+          const origG = this.resizeOriginalObject as GroupObject;
+          const scaleX = newWidth / this.resizeStartBounds.width;
+          const scaleY = newHeight / this.resizeStartBounds.height;
+          const g = obj as GroupObject;
+
+          // 更新 GROUP 的中心点和尺寸
+          g.x = newX + newWidth / 2;
+          g.y = newY + newHeight / 2;
+          g.width = newWidth;
+          g.height = newHeight;
+
+          // 按比例缩放所有子对象
+          g.children = origG.children.map(child => {
+            const scaledChild = JSON.parse(JSON.stringify(child));
+
+            // 缩放位置（相对于中心点）
+            scaledChild.x = child.x * scaleX;
+            scaledChild.y = child.y * scaleY;
+
+            // 根据子对象类型缩放尺寸
+            if (scaledChild.type === 'RECTANGLE' || scaledChild.type === 'IMAGE') {
+              scaledChild.width = (child as RectObject).width * scaleX;
+              scaledChild.height = (child as RectObject).height * scaleY;
+            } else if (scaledChild.type === 'CIRCLE') {
+              scaledChild.radius = (child as CircleObject).radius * Math.min(scaleX, scaleY);
+            } else if (scaledChild.type === 'TEXT') {
+              scaledChild.fontSize = Math.max(8, Math.round((child as TextObject).fontSize * Math.min(scaleX, scaleY)));
+            } else if (scaledChild.type === 'RICH_TEXT') {
+              const rtChild = child as RichTextObject;
+              scaledChild.fontSize = Math.max(8, Math.round(rtChild.fontSize * Math.min(scaleX, scaleY)));
+              scaledChild.segments = rtChild.segments.map((seg: RichTextSegment) => ({
+                ...seg,
+                fontSize: seg.fontSize ? Math.max(8, Math.round(seg.fontSize * Math.min(scaleX, scaleY))) : undefined
+              }));
+            } else if (scaledChild.type === 'LINE' || scaledChild.type === 'ARROW') {
+              scaledChild.x2 = (child as LineObject).x2 * scaleX;
+              scaledChild.y2 = (child as LineObject).y2 * scaleY;
+            } else if (scaledChild.type === 'PATH') {
+              scaledChild.points = (child as PathObject).points.map((pt: Point) => ({
+                x: pt.x * scaleX,
+                y: pt.y * scaleY
+              }));
+            }
+
+            return scaledChild;
+          });
+          break;
+        }
       }
 
       this.renderCanvas();
@@ -4663,8 +4829,14 @@ export class CanvasDrawingEditor extends HTMLElement {
       }
       case 'TEXT': {
         const t = obj as TextObject;
-        ctx.font = `${t.fontSize}px sans-serif`;
+        const fontStyle = `${t.bold ? 'bold ' : ''}${t.italic ? 'italic ' : ''}`;
+        ctx.font = `${fontStyle}${t.fontSize}px ${t.fontFamily || 'sans-serif'}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.fillText(t.text, t.x, t.y);
+        // 重置对齐方式
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
 
         // 如果启用热区功能且文本有热区配置，绘制热区标识
         if (this.config.enableHotzone && t.hotzone) {
@@ -4676,13 +4848,13 @@ export class CanvasDrawingEditor extends HTMLElement {
           ctx.strokeStyle = themeColor;
           ctx.lineWidth = 1;
           ctx.setLineDash([4, 2]);
-          ctx.strokeRect(t.x - 2, t.y - t.fontSize - 2, textWidth + 4, t.fontSize * 1.2 + 4);
+          ctx.strokeRect(t.x - textWidth / 2 - 2, t.y - t.fontSize / 2 - 2, textWidth + 4, t.fontSize + 4);
           ctx.setLineDash([]);
 
           // 绘制热区图标（小圆点）
           ctx.fillStyle = themeColor;
           ctx.beginPath();
-          ctx.arc(t.x + textWidth + 8, t.y - t.fontSize / 2, 4, 0, 2 * Math.PI);
+          ctx.arc(t.x + textWidth / 2 + 8, t.y, 4, 0, 2 * Math.PI);
           ctx.fill();
           ctx.restore();
         }
@@ -4690,9 +4862,33 @@ export class CanvasDrawingEditor extends HTMLElement {
       }
       case 'RICH_TEXT': {
         const rt = obj as RichTextObject;
-        let offsetX = 0;
-        const baseY = rt.y;
         const defaultFontFamily = rt.fontFamily || 'sans-serif';
+
+        // 计算总宽度用于居中对齐
+        let totalWidth = 0;
+        for (const segment of rt.segments) {
+          const fontSize = segment.fontSize || rt.fontSize;
+          const fontFamily = segment.fontFamily || defaultFontFamily;
+          const bold = segment.bold ? 'bold ' : '';
+          const italic = segment.italic ? 'italic ' : '';
+          ctx.font = `${italic}${bold}${fontSize}px ${fontFamily}`;
+          totalWidth += ctx.measureText(segment.text).width;
+        }
+
+        // 根据 textAlign 计算起始 X 坐标
+        let startX = rt.x;
+        if (rt.textAlign === 'center') {
+          startX = rt.x - totalWidth / 2;
+        } else if (rt.textAlign === 'right') {
+          startX = rt.x - totalWidth;
+        }
+
+        // 计算最大字体大小用于垂直居中
+        const maxFontSize = this.getRichTextMaxFontSize(rt);
+        // 垂直居中：baseY 是文本基线位置
+        const baseY = rt.textAlign === 'center' ? rt.y + maxFontSize / 3 : rt.y;
+
+        let offsetX = 0;
 
         for (const segment of rt.segments) {
           const fontSize = segment.fontSize || rt.fontSize;
@@ -4707,14 +4903,14 @@ export class CanvasDrawingEditor extends HTMLElement {
           if (segment.backgroundColor) {
             const segmentWidth = ctx.measureText(segment.text).width;
             ctx.fillStyle = segment.backgroundColor;
-            ctx.fillRect(rt.x + offsetX, baseY - fontSize, segmentWidth, fontSize * 1.2);
+            ctx.fillRect(startX + offsetX, baseY - fontSize, segmentWidth, fontSize * 1.2);
           }
 
           // 设置文本颜色
           ctx.fillStyle = segment.color || rt.color;
 
           // 绘制文本
-          ctx.fillText(segment.text, rt.x + offsetX, baseY);
+          ctx.fillText(segment.text, startX + offsetX, baseY);
 
           // 获取文本宽度用于后续装饰线和偏移计算
           const textWidth = ctx.measureText(segment.text).width;
@@ -4724,8 +4920,8 @@ export class CanvasDrawingEditor extends HTMLElement {
             ctx.beginPath();
             ctx.strokeStyle = segment.color || rt.color;
             ctx.lineWidth = Math.max(1, fontSize / 12);
-            ctx.moveTo(rt.x + offsetX, baseY + fontSize * 0.1);
-            ctx.lineTo(rt.x + offsetX + textWidth, baseY + fontSize * 0.1);
+            ctx.moveTo(startX + offsetX, baseY + fontSize * 0.1);
+            ctx.lineTo(startX + offsetX + textWidth, baseY + fontSize * 0.1);
             ctx.stroke();
           }
 
@@ -4734,8 +4930,8 @@ export class CanvasDrawingEditor extends HTMLElement {
             ctx.beginPath();
             ctx.strokeStyle = segment.color || rt.color;
             ctx.lineWidth = Math.max(1, fontSize / 12);
-            ctx.moveTo(rt.x + offsetX, baseY - fontSize * 0.35);
-            ctx.lineTo(rt.x + offsetX + textWidth, baseY - fontSize * 0.35);
+            ctx.moveTo(startX + offsetX, baseY - fontSize * 0.35);
+            ctx.lineTo(startX + offsetX + textWidth, baseY - fontSize * 0.35);
             ctx.stroke();
           }
 
@@ -5114,30 +5310,33 @@ export class CanvasDrawingEditor extends HTMLElement {
     ctx.arc(centerX, rotateHandleY, 3, -Math.PI * 0.7, Math.PI * 0.3);
     ctx.stroke();
 
-    // 绘制斜切手柄（边缘中点的菱形）
-    const skewHandleSize = 6;
-    const skewHandles = [
-      { x: centerX, y: bounds.y, type: 'top' },                           // 上
-      { x: centerX, y: bounds.y + bounds.height, type: 'bottom' },        // 下
-      { x: bounds.x, y: centerY, type: 'left' },                          // 左
-      { x: bounds.x + bounds.width, y: centerY, type: 'right' },          // 右
-    ];
+    // 绘制斜切手柄（边缘中点的菱形）- 仅当对象足够大时显示
+    const minSizeForSkewHandles = 30; // 最小尺寸阈值
+    if (bounds.width >= minSizeForSkewHandles && bounds.height >= minSizeForSkewHandles) {
+      const skewHandleSize = 6;
+      const skewHandles = [
+        { x: centerX, y: bounds.y, type: 'top' },                           // 上
+        { x: centerX, y: bounds.y + bounds.height, type: 'bottom' },        // 下
+        { x: bounds.x, y: centerY, type: 'left' },                          // 左
+        { x: bounds.x + bounds.width, y: centerY, type: 'right' },          // 右
+      ];
 
-    ctx.fillStyle = '#f59e0b'; // 橙色区分斜切手柄
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.5;
+      ctx.fillStyle = '#f59e0b'; // 橙色区分斜切手柄
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
 
-    skewHandles.forEach(handle => {
-      ctx.beginPath();
-      // 绘制菱形
-      ctx.moveTo(handle.x, handle.y - skewHandleSize);
-      ctx.lineTo(handle.x + skewHandleSize, handle.y);
-      ctx.lineTo(handle.x, handle.y + skewHandleSize);
-      ctx.lineTo(handle.x - skewHandleSize, handle.y);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-    });
+      skewHandles.forEach(handle => {
+        ctx.beginPath();
+        // 绘制菱形
+        ctx.moveTo(handle.x, handle.y - skewHandleSize);
+        ctx.lineTo(handle.x + skewHandleSize, handle.y);
+        ctx.lineTo(handle.x, handle.y + skewHandleSize);
+        ctx.lineTo(handle.x - skewHandleSize, handle.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      });
+    }
 
     ctx.restore();
   }
@@ -5145,6 +5344,13 @@ export class CanvasDrawingEditor extends HTMLElement {
   // 获取斜切手柄位置
   private getSkewHandleAtPoint(obj: CanvasObject, x: number, y: number): 'top' | 'bottom' | 'left' | 'right' | null {
     const bounds = this.getObjectBounds(obj);
+
+    // 如果对象太小，不启用斜切手柄
+    const minSizeForSkewHandles = 30;
+    if (bounds.width < minSizeForSkewHandles || bounds.height < minSizeForSkewHandles) {
+      return null;
+    }
+
     const centerX = bounds.x + bounds.width / 2;
     const centerY = bounds.y + bounds.height / 2;
     const handleSize = 10; // 点击区域
@@ -5859,6 +6065,29 @@ export class CanvasDrawingEditor extends HTMLElement {
             </div>
           ` : ''}
 
+          <!-- 形状库工具组 -->
+          ${tool.shapePanel ? `
+            <div class="tool-group shape-library-group" data-group="shape-library">
+              <button class="tool-btn tool-group-btn shape-library-btn" title="${this.t('shapePanel')}">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7" rx="1"/>
+                  <circle cx="17.5" cy="6.5" r="3.5"/>
+                  <polygon points="6.5 14 10 21 3 21"/>
+                  <path d="M14 14h7v7h-7z"/>
+                </svg>
+                <span class="dropdown-indicator">▾</span>
+              </button>
+              <div class="tool-dropdown shape-library-dropdown">
+                <div class="shape-library-header">
+                  <span>${this.t('shapePanel')}</span>
+                  <input type="text" class="shape-library-search" placeholder="${this.t('search') || '搜索...'}" />
+                </div>
+                <div class="shape-library-grid"></div>
+                <div class="shape-library-empty">${this.t('noShapes')}</div>
+              </div>
+            </div>
+          ` : ''}
+
           <div class="divider"></div>
           ${tool.undo !== false ? `
             <button class="tool-btn undo-btn" title="${this.t('undo')}" disabled>
@@ -6166,10 +6395,14 @@ export class CanvasDrawingEditor extends HTMLElement {
     this.contextMenu = this.shadow.querySelector('.context-menu')!;
     this.hotzoneDrawer = this.shadow.querySelector('.hotzone-drawer')!;
 
+    // 形状面板 DOM 引用
+    this.shapePanelElement = this.shadow.querySelector('.shape-panel')!;
+
     // 绑定事件
     this.bindEvents();
     this.bindRichTextEditorEvents();
     this.bindTimelineEditorEvents();
+    this.bindShapePanelEvents();
   }
 
   // 绑定事件
@@ -6567,6 +6800,519 @@ export class CanvasDrawingEditor extends HTMLElement {
       return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
     return `rgba(84, 80, 220, ${alpha})`; // 默认颜色
+  }
+
+  // ========== 形状选择器面板 API ==========
+
+  /**
+   * 注册自定义形状到形状面板
+   * @param shapes 形状配置数组
+   * @param panelConfig 可选的面板配置
+   */
+  public registerShapes(shapes: ShapeConfig[], panelConfig?: ShapePanelConfig): void {
+    // 合并形状配置
+    shapes.forEach(shape => {
+      const existingIndex = this.registeredShapes.findIndex(s => s.id === shape.id);
+      if (existingIndex >= 0) {
+        this.registeredShapes[existingIndex] = shape;
+      } else {
+        this.registeredShapes.push(shape);
+      }
+    });
+
+    // 更新面板配置
+    if (panelConfig) {
+      this.shapePanelConfig = { ...this.shapePanelConfig, ...panelConfig };
+    }
+
+    // 如果面板已显示，更新内容
+    if (this.shapePanelVisible) {
+      this.renderShapePanelContent();
+    }
+
+    // 触发事件
+    this.dispatchEvent(new CustomEvent('shapes-registered', {
+      detail: { shapes: this.registeredShapes }
+    }));
+  }
+
+  /**
+   * 获取已注册的形状列表
+   */
+  public getRegisteredShapes(): ShapeConfig[] {
+    return [...this.registeredShapes];
+  }
+
+  /**
+   * 清空已注册的形状
+   */
+  public clearRegisteredShapes(): void {
+    this.registeredShapes = [];
+    if (this.shapePanelVisible) {
+      this.renderShapePanelContent();
+    }
+  }
+
+  /**
+   * 移除指定形状
+   */
+  public removeShape(shapeId: string): void {
+    this.registeredShapes = this.registeredShapes.filter(s => s.id !== shapeId);
+    if (this.shapePanelVisible) {
+      this.renderShapePanelContent();
+    }
+  }
+
+  /**
+   * 显示形状面板
+   */
+  public showShapePanel(): void {
+    if (!this.shapePanelElement) return;
+    this.shapePanelVisible = true;
+    this.shapePanelElement.style.display = 'block';
+    this.renderShapePanelContent();
+  }
+
+  /**
+   * 隐藏形状面板
+   */
+  public hideShapePanel(): void {
+    if (!this.shapePanelElement) return;
+    this.shapePanelVisible = false;
+    this.shapePanelElement.style.display = 'none';
+  }
+
+  /**
+   * 切换形状面板显示状态
+   */
+  public toggleShapePanel(): void {
+    if (this.shapePanelVisible) {
+      this.hideShapePanel();
+    } else {
+      this.showShapePanel();
+    }
+  }
+
+  // 绑定形状面板事件
+  private bindShapePanelEvents(): void {
+    // 形状库工具组 - 悬停时渲染内容
+    const shapeLibraryGroup = this.shadow.querySelector('.shape-library-group');
+    if (shapeLibraryGroup) {
+      // 鼠标进入时渲染形状列表
+      shapeLibraryGroup.addEventListener('mouseenter', () => {
+        this.renderShapeLibraryContent();
+      });
+    }
+  }
+
+  // 渲染形状库内容（工具栏下拉面板）
+  private renderShapeLibraryContent(): void {
+    const gridContainer = this.shadow.querySelector('.shape-library-grid');
+    const emptyContainer = this.shadow.querySelector('.shape-library-empty');
+    const shapeLibraryGroup = this.shadow.querySelector('.shape-library-group');
+    const searchInput = this.shadow.querySelector('.shape-library-search') as HTMLInputElement;
+
+    if (!gridContainer) return;
+
+    const shapes = this.registeredShapes;
+
+    // 如果没有注册形状，隐藏整个形状库按钮
+    if (shapeLibraryGroup) {
+      (shapeLibraryGroup as HTMLElement).style.display = shapes.length === 0 ? 'none' : '';
+    }
+
+    if (shapes.length === 0) {
+      gridContainer.innerHTML = '';
+      if (emptyContainer) {
+        (emptyContainer as HTMLElement).style.display = 'block';
+      }
+      return;
+    }
+
+    if (emptyContainer) {
+      (emptyContainer as HTMLElement).style.display = 'none';
+    }
+
+    // 渲染形状列表的函数
+    const renderShapes = (filterText: string = '') => {
+      const filteredShapes = filterText
+        ? shapes.filter(s => s.name.toLowerCase().includes(filterText.toLowerCase()) ||
+                            (s.category && s.category.toLowerCase().includes(filterText.toLowerCase())))
+        : shapes;
+
+      if (filteredShapes.length === 0) {
+        gridContainer.innerHTML = `<div class="shape-library-no-results">${this.t('noResults') || '无匹配结果'}</div>`;
+        return;
+      }
+
+      gridContainer.innerHTML = filteredShapes.map(shape => `
+        <div class="shape-library-item" data-shape-id="${shape.id}" title="${shape.name}${shape.text ? ' - ' + shape.text : ''}">
+          <div class="shape-library-item-preview">
+            ${this.getShapePreviewSvg(shape)}
+          </div>
+          <span class="shape-library-item-name">${shape.name}</span>
+        </div>
+      `).join('');
+
+      // 绑定形状点击事件
+      gridContainer.querySelectorAll('.shape-library-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          const shapeId = (e.currentTarget as HTMLElement).dataset.shapeId;
+          const shape = this.registeredShapes.find(s => s.id === shapeId);
+          if (shape) {
+            this.addShapeToCanvas(shape);
+          }
+        });
+      });
+    };
+
+    // 初始渲染
+    renderShapes();
+
+    // 绑定搜索事件
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        renderShapes((e.target as HTMLInputElement).value);
+      });
+    }
+  }
+
+  // 渲染形状面板内容（保留旧方法兼容）
+  private renderShapePanelContent(): void {
+    // 直接调用新方法
+    this.renderShapeLibraryContent();
+  }
+
+  // 获取形状预览SVG
+  private getShapePreviewSvg(shape: ShapeConfig): string {
+    // 如果有自定义图标，使用自定义图标
+    if (shape.icon) {
+      return shape.icon;
+    }
+
+    const fillColor = shape.fillColor || '#5450dc';
+    const strokeColor = shape.strokeColor || fillColor;
+    const strokeWidth = shape.strokeWidth || 2;
+    const fill = shape.fillMode === 'stroke' ? 'none' : fillColor;
+    const stroke = shape.fillMode === 'fill' ? 'none' : strokeColor;
+
+    // 根据形状类型生成预览SVG（不显示文字，文字在下方名称显示）
+    switch (shape.type) {
+      case 'rectangle':
+        return `<svg viewBox="0 0 36 36" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}">
+          <rect x="4" y="8" width="28" height="20" rx="${shape.cornerRadius || 2}"/>
+        </svg>`;
+      case 'circle':
+        return `<svg viewBox="0 0 36 36" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}">
+          <circle cx="18" cy="18" r="14"/>
+        </svg>`;
+      case 'ellipse':
+        return `<svg viewBox="0 0 36 36" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}">
+          <ellipse cx="18" cy="18" rx="16" ry="10"/>
+        </svg>`;
+      case 'triangle':
+        return `<svg viewBox="0 0 36 36" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}">
+          <polygon points="18 4 32 32 4 32"/>
+        </svg>`;
+      case 'star':
+        return `<svg viewBox="0 0 36 36" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}">
+          <polygon points="18 2 22.5 13 34 13 25 21 28.5 32 18 25 7.5 32 11 21 2 13 13.5 13"/>
+        </svg>`;
+      case 'heart':
+        return `<svg viewBox="0 0 36 36" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}">
+          <path d="M18 32 C8 22 2 16 2 10 C2 5 6 2 11 2 C14 2 17 4 18 6 C19 4 22 2 25 2 C30 2 34 5 34 10 C34 16 28 22 18 32Z"/>
+        </svg>`;
+      case 'diamond':
+        return `<svg viewBox="0 0 36 36" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}">
+          <polygon points="18 2 34 18 18 34 2 18"/>
+        </svg>`;
+      case 'hexagon':
+        return `<svg viewBox="0 0 36 36" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}">
+          <polygon points="9 4 27 4 34 18 27 32 9 32 2 18"/>
+        </svg>`;
+      case 'polygon':
+        const sides = shape.sides || 6;
+        const points = this.generatePolygonPoints(18, 18, 14, sides);
+        return `<svg viewBox="0 0 36 36" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}">
+          <polygon points="${points}"/>
+        </svg>`;
+      case 'roundedRect':
+        return `<svg viewBox="0 0 36 36" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}">
+          <rect x="4" y="8" width="28" height="20" rx="${shape.cornerRadius || 8}"/>
+        </svg>`;
+      case 'parallelogram':
+        return `<svg viewBox="0 0 36 36" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}">
+          <polygon points="8 4 34 4 28 32 2 32"/>
+        </svg>`;
+      case 'trapezoid':
+        return `<svg viewBox="0 0 36 36" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}">
+          <polygon points="8 8 28 8 34 28 2 28"/>
+        </svg>`;
+      case 'arrow':
+        return `<svg viewBox="0 0 36 36" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}">
+          <polygon points="2 14 22 14 22 6 34 18 22 30 22 22 2 22"/>
+        </svg>`;
+      case 'callout':
+        return `<svg viewBox="0 0 36 36" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}">
+          <path d="M4 4 H32 V24 H16 L8 32 L10 24 H4 Z"/>
+        </svg>`;
+      case 'cloud':
+        return `<svg viewBox="0 0 36 36" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}">
+          <path d="M8 28 C4 28 2 24 4 20 C2 16 6 12 10 14 C12 8 20 8 22 12 C26 10 32 14 30 20 C34 22 32 28 28 28 Z"/>
+        </svg>`;
+      case 'cross':
+        return `<svg viewBox="0 0 36 36" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}">
+          <polygon points="14 2 22 2 22 14 34 14 34 22 22 22 22 34 14 34 14 22 2 22 2 14 14 14"/>
+        </svg>`;
+      default:
+        return `<svg viewBox="0 0 36 36" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}">
+          <rect x="4" y="4" width="28" height="28" rx="4"/>
+        </svg>`;
+    }
+  }
+
+  // 生成多边形顶点
+  private generatePolygonPoints(cx: number, cy: number, radius: number, sides: number): string {
+    const points: string[] = [];
+    for (let i = 0; i < sides; i++) {
+      const angle = (i * 2 * Math.PI / sides) - Math.PI / 2;
+      const x = cx + radius * Math.cos(angle);
+      const y = cy + radius * Math.sin(angle);
+      points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+    }
+    return points.join(' ');
+  }
+
+  // 添加形状到画布
+  private addShapeToCanvas(shape: ShapeConfig): void {
+    // 计算画布中心位置
+    const centerX = (this.canvas.width / 2 - this.panOffset.x) / this.scale;
+    const centerY = (this.canvas.height / 2 - this.panOffset.y) / this.scale;
+
+    const width = shape.width || 100;
+    const height = shape.height || 100;
+
+    // 保存当前状态到历史
+    this.saveHistory();
+
+    let newObject: CanvasObject;
+
+    // 根据填充模式决定使用哪个颜色
+    // fill 模式：使用填充颜色
+    // stroke 模式：使用边框颜色
+    // both 模式：使用填充颜色（边框颜色由 lineWidth > 0 时自动使用 color）
+    const shapeColor = shape.fillMode === 'stroke'
+      ? (shape.strokeColor || shape.fillColor || '#000000')
+      : (shape.fillColor || shape.strokeColor || '#000000');
+
+    // 根据形状类型创建对应的画布对象
+    switch (shape.type) {
+      case 'rectangle':
+      case 'roundedRect':
+      case 'parallelogram':
+      case 'trapezoid':
+        newObject = {
+          id: this.generateId(),
+          type: 'RECTANGLE',
+          x: centerX - width / 2,
+          y: centerY - height / 2,
+          width,
+          height,
+          color: shapeColor,
+          lineWidth: shape.strokeWidth || 2,
+          fillMode: shape.fillMode || 'both',
+          lineStyle: shape.strokeStyle || 'solid',
+          opacity: shape.opacity
+        } as RectObject;
+        break;
+
+      case 'circle':
+      case 'ellipse':
+        newObject = {
+          id: this.generateId(),
+          type: 'CIRCLE',
+          x: centerX,
+          y: centerY,
+          radius: Math.min(width, height) / 2,
+          color: shapeColor,
+          lineWidth: shape.strokeWidth || 2,
+          fillMode: shape.fillMode || 'both',
+          lineStyle: shape.strokeStyle || 'solid',
+          opacity: shape.opacity
+        } as CircleObject;
+        break;
+
+      case 'triangle':
+        newObject = {
+          id: this.generateId(),
+          type: 'TRIANGLE',
+          x: centerX,
+          y: centerY,
+          radius: Math.min(width, height) / 2,
+          color: shapeColor,
+          lineWidth: shape.strokeWidth || 2,
+          fillMode: shape.fillMode || 'both',
+          lineStyle: shape.strokeStyle || 'solid',
+          opacity: shape.opacity
+        } as TriangleObject;
+        break;
+
+      case 'star':
+        newObject = {
+          id: this.generateId(),
+          type: 'STAR',
+          x: centerX,
+          y: centerY,
+          points: shape.points || 5,
+          outerRadius: Math.min(width, height) / 2,
+          innerRadius: shape.innerRadius || Math.min(width, height) / 4,
+          color: shapeColor,
+          lineWidth: shape.strokeWidth || 2,
+          fillMode: shape.fillMode || 'both',
+          lineStyle: shape.strokeStyle || 'solid',
+          opacity: shape.opacity
+        } as StarObject;
+        break;
+
+      case 'heart':
+        newObject = {
+          id: this.generateId(),
+          type: 'HEART',
+          x: centerX,
+          y: centerY,
+          size: Math.min(width, height) / 2,
+          color: shapeColor,
+          lineWidth: shape.strokeWidth || 2,
+          fillMode: shape.fillMode || 'both',
+          lineStyle: shape.strokeStyle || 'solid',
+          opacity: shape.opacity
+        } as HeartObject;
+        break;
+
+      case 'diamond':
+        newObject = {
+          id: this.generateId(),
+          type: 'DIAMOND',
+          x: centerX,
+          y: centerY,
+          width,
+          height,
+          color: shapeColor,
+          lineWidth: shape.strokeWidth || 2,
+          fillMode: shape.fillMode || 'both',
+          lineStyle: shape.strokeStyle || 'solid',
+          opacity: shape.opacity
+        } as DiamondObject;
+        break;
+
+      case 'polygon':
+      case 'hexagon':
+      case 'octagon':
+        newObject = {
+          id: this.generateId(),
+          type: 'POLYGON',
+          x: centerX,
+          y: centerY,
+          sides: shape.sides || (shape.type === 'hexagon' ? 6 : shape.type === 'octagon' ? 8 : 6),
+          radius: Math.min(width, height) / 2,
+          color: shapeColor,
+          lineWidth: shape.strokeWidth || 2,
+          fillMode: shape.fillMode || 'both',
+          lineStyle: shape.strokeStyle || 'solid',
+          opacity: shape.opacity
+        } as PolygonObject;
+        break;
+
+      default:
+        // 默认创建矩形
+        newObject = {
+          id: this.generateId(),
+          type: 'RECTANGLE',
+          x: centerX - width / 2,
+          y: centerY - height / 2,
+          width,
+          height,
+          color: shapeColor,
+          lineWidth: shape.strokeWidth || 2,
+          fillMode: shape.fillMode || 'both',
+          lineStyle: shape.strokeStyle || 'solid',
+          opacity: shape.opacity
+        } as RectObject;
+    }
+
+    // 添加到对象列表
+    this.objects.push(newObject);
+
+    // 如果形状有文字，创建富文本对象并与形状组合
+    if (shape.text) {
+      const richTextObject: RichTextObject = {
+        id: this.generateId(),
+        type: 'RICH_TEXT',
+        x: 0,  // 相对于 GROUP 中心的坐标
+        y: 0,
+        fontSize: shape.fontSize || 16,
+        fontFamily: shape.fontFamily || 'sans-serif',
+        color: shape.textColor || '#000000',
+        lineWidth: 1,
+        textAlign: 'center',
+        segments: [{
+          text: shape.text,
+          color: shape.textColor || '#000000',
+          fontSize: shape.fontSize || 16,
+          fontFamily: shape.fontFamily || 'sans-serif',
+          bold: shape.fontWeight === 'bold',
+          italic: shape.fontStyle === 'italic'
+        }]
+      };
+
+      // 计算组合的边界
+      const groupWidth = width;
+      const groupHeight = height;
+
+      // 将形状对象的坐标转换为相对于 GROUP 中心的坐标
+      const shapeRelativeX = newObject.x - centerX;
+      const shapeRelativeY = newObject.y - centerY;
+      const relativeShapeObject = { ...newObject, x: shapeRelativeX, y: shapeRelativeY };
+
+      // 创建组合对象，包含形状和富文本（子对象使用相对坐标）
+      const groupObject: GroupObject = {
+        id: this.generateId(),
+        type: 'GROUP',
+        x: centerX,
+        y: centerY,
+        children: [relativeShapeObject as CanvasObject, richTextObject],
+        width: groupWidth,
+        height: groupHeight,
+        color: '#000000',
+        lineWidth: 1
+      };
+
+      // 从对象列表中移除单独的形状（它现在在组合中）
+      this.objects = this.objects.filter(obj => obj.id !== newObject.id);
+      this.objects.push(groupObject);
+
+      // 选中组合对象
+      this.selectedId = groupObject.id;
+      this.selectedIds.clear();
+      this.selectedIds.add(groupObject.id);
+    } else {
+      // 选中新创建的形状对象
+      this.selectedId = newObject.id;
+      this.selectedIds.clear();
+      this.selectedIds.add(newObject.id);
+    }
+
+    // 切换到选择工具
+    this.setTool('SELECT');
+
+    // 重新渲染
+    this.renderCanvas();
+    this.dispatchChangeEvent();
+
+    // 触发形状添加事件
+    this.dispatchEvent(new CustomEvent('shape-added', {
+      detail: { shape, object: newObject }
+    }));
   }
 
   // 获取样式
@@ -7844,6 +8590,113 @@ export class CanvasDrawingEditor extends HTMLElement {
 
       .hotzone-btn-save:hover {
         filter: brightness(0.9);
+      }
+
+      /* ========== 形状库工具组 ========== */
+      .shape-library-group .tool-dropdown {
+        min-width: 280px;
+        max-width: 320px;
+        padding: 0;
+      }
+
+      .shape-library-header {
+        padding: 10px 12px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #1e293b;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .shape-library-search {
+        width: 100%;
+        padding: 6px 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 12px;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+
+      .shape-library-search:focus {
+        border-color: var(--theme-color);
+      }
+
+      .shape-library-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        padding: 10px;
+        min-height: 80px;
+        max-height: 320px;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      .shape-library-grid:empty + .shape-library-empty {
+        display: block;
+      }
+
+      .shape-library-empty {
+        display: none;
+        padding: 20px;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 12px;
+      }
+
+      .shape-library-no-results {
+        grid-column: 1 / -1;
+        padding: 20px;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 12px;
+      }
+
+      .shape-library-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 4px;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.15s;
+        background: #f8fafc;
+        aspect-ratio: 1;
+      }
+
+      .shape-library-item:hover {
+        background: var(--theme-hover-bg);
+        border-color: var(--theme-color);
+      }
+
+      .shape-library-item-preview {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .shape-library-item-preview svg {
+        width: 100%;
+        height: 100%;
+      }
+
+      .shape-library-item-name {
+        font-size: 9px;
+        color: #64748b;
+        margin-top: 3px;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
       }
 
       /* ========== 移动端响应式布局 ========== */
