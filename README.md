@@ -576,6 +576,38 @@ editor.tweenAnimate(objectId, { x: 400 }, {
 editor.stopAllAnimations();
 ```
 
+### 🖼️ 图片导出 API
+
+通过 `getImageData()` 方法可以获取画布图片数据（base64 或 Blob），无需触发下载：
+
+```javascript
+const editor = document.querySelector('canvas-drawing-editor');
+
+// 获取 base64 格式（默认）
+const dataURL = await editor.getImageData();
+console.log(dataURL); // data:image/png;base64,...
+
+// 获取 Blob 格式（适合上传到服务器）
+const blob = await editor.getImageData({
+  type: 'blob',
+  format: 'png',        // 'png' | 'jpeg' | 'webp'
+  quality: 0.92,        // jpeg/webp 质量 (0-1)
+  background: '#ffffff' // 背景色
+});
+
+// 上传到服务器示例
+const formData = new FormData();
+formData.append('image', blob, 'canvas.png');
+await fetch('/api/upload', { method: 'POST', body: formData });
+```
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `format` | string | 'png' | 图片格式：'png', 'jpeg', 'webp' |
+| `quality` | number | 0.92 | 图片质量（仅 jpeg/webp 有效，0-1） |
+| `type` | string | 'dataURL' | 返回类型：'dataURL' 或 'blob' |
+| `background` | string | '#ffffff' | 背景颜色 |
+
 ### 🛠️ 开发
 
 ```bash
@@ -1126,6 +1158,38 @@ editor.tweenAnimate(objectId, { x: 400 }, {
 // Stop animations
 editor.stopAllAnimations();
 ```
+
+### 🖼️ Image Export API
+
+Use `getImageData()` method to get canvas image data (base64 or Blob) without triggering download:
+
+```javascript
+const editor = document.querySelector('canvas-drawing-editor');
+
+// Get base64 format (default)
+const dataURL = await editor.getImageData();
+console.log(dataURL); // data:image/png;base64,...
+
+// Get Blob format (suitable for server upload)
+const blob = await editor.getImageData({
+  type: 'blob',
+  format: 'png',        // 'png' | 'jpeg' | 'webp'
+  quality: 0.92,        // jpeg/webp quality (0-1)
+  background: '#ffffff' // Background color
+});
+
+// Upload to server example
+const formData = new FormData();
+formData.append('image', blob, 'canvas.png');
+await fetch('/api/upload', { method: 'POST', body: formData });
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `format` | string | 'png' | Image format: 'png', 'jpeg', 'webp' |
+| `quality` | number | 0.92 | Image quality (jpeg/webp only, 0-1) |
+| `type` | string | 'dataURL' | Return type: 'dataURL' or 'blob' |
+| `background` | string | '#ffffff' | Background color |
 
 ### 🛠️ Development
 

@@ -2300,6 +2300,39 @@ export class CanvasDrawingEditor extends HTMLElement {
     this.transformOrigin = null;
   }
 
+  // 更新对象颜色（支持 GROUP 对象的子对象颜色更新）
+  private updateObjectColor(obj: CanvasObject, newColor: string): void {
+    obj.color = newColor;
+
+    // 如果是 GROUP 对象，更新子对象的颜色
+    if (obj.type === 'GROUP') {
+      const groupObj = obj as GroupObject;
+      groupObj.children.forEach(child => {
+        // 更新子对象的边框颜色
+        child.color = newColor;
+
+        // 如果子对象有填充色，也更新填充色
+        if ('fillColor' in child && child.fillColor) {
+          (child as any).fillColor = newColor;
+        }
+
+        // 如果是文本对象，不更新颜色（保持文本颜色独立）
+        // 只更新形状的颜色
+        if (child.type !== 'TEXT' && child.type !== 'RICH_TEXT') {
+          child.color = newColor;
+          if ('fillColor' in child) {
+            (child as any).fillColor = newColor;
+          }
+        }
+      });
+    }
+
+    // 如果对象有填充色属性，也更新
+    if ('fillColor' in obj && (obj as any).fillColor) {
+      (obj as any).fillColor = newColor;
+    }
+  }
+
   // 派发变化事件
   private dispatchChangeEvent(): void {
     this.dispatchEvent(new CustomEvent('editor-change', {
@@ -3736,7 +3769,7 @@ export class CanvasDrawingEditor extends HTMLElement {
     };
   }
 
-  // 导出画布为 PNG 图片
+  // 导出画布为 PNG 图片（下载文件）
   public exportPNG(filename: string = 'canvas-export.png'): void {
     if (!this.canvas) return;
 
@@ -3744,6 +3777,63 @@ export class CanvasDrawingEditor extends HTMLElement {
     link.download = filename;
     link.href = this.canvas.toDataURL('image/png');
     link.click();
+  }
+
+  // 获取画布图片数据（返回 base64 或 Blob）
+  public getImageData(options: {
+    format?: 'png' | 'jpeg' | 'webp';
+    quality?: number;
+    type?: 'dataURL' | 'blob';
+    background?: string;
+  } = {}): Promise<string | Blob> {
+    return new Promise((resolve, reject) => {
+      if (!this.canvas) {
+        reject(new Error('Canvas not initialized'));
+        return;
+      }
+
+      const {
+        format = 'png',
+        quality = 0.92,
+        type = 'dataURL',
+        background = '#ffffff'
+      } = options;
+
+      // 创建临时画布
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = this.canvas.width;
+      tempCanvas.height = this.canvas.height;
+      const tempCtx = tempCanvas.getContext('2d')!;
+
+      // 绘制背景
+      tempCtx.fillStyle = background;
+      tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+      // 应用缩放和平移
+      tempCtx.translate(this.panOffset.x, this.panOffset.y);
+      tempCtx.scale(this.scale, this.scale);
+
+      // 绘制所有对象
+      this.objects.forEach(obj => this.drawObject(tempCtx, obj));
+
+      const mimeType = `image/${format}`;
+
+      if (type === 'blob') {
+        tempCanvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Failed to create blob'));
+            }
+          },
+          mimeType,
+          quality
+        );
+      } else {
+        resolve(tempCanvas.toDataURL(mimeType, quality));
+      }
+    });
   }
 
   // ========== Tween动画系统方法 ==========
@@ -6664,7 +6754,7 @@ export class CanvasDrawingEditor extends HTMLElement {
           const obj = this.objects.find(o => o.id === this.selectedId);
           if (obj) {
             this.saveHistory();
-            obj.color = newColor;
+            this.updateObjectColor(obj, newColor);
             this.renderCanvas();
             this.dispatchChangeEvent();
           }
@@ -6674,7 +6764,7 @@ export class CanvasDrawingEditor extends HTMLElement {
           this.selectedIds.forEach(id => {
             const obj = this.objects.find(o => o.id === id);
             if (obj) {
-              obj.color = newColor;
+              this.updateObjectColor(obj, newColor);
             }
           });
           this.renderCanvas();

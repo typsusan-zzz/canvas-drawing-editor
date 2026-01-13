@@ -338,6 +338,22 @@
             </div>
           </div>
 
+          <!-- 图片导出 API -->
+          <div class="config-section">
+            <h3 class="font-semibold text-gray-700 mb-1 text-sm">
+              <i class="fas fa-image text-green-500 mr-2"></i>图片导出 API
+            </h3>
+            <p class="text-xs text-gray-400 mb-3">* 获取图片数据，无需下载</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="getImageDataURL()" class="p-2 bg-green-500 text-white rounded text-xs hover:bg-green-600">
+                <i class="fas fa-code mr-1"></i>DataURL
+              </button>
+              <button onclick="getImageBlob()" class="p-2 bg-teal-500 text-white rounded text-xs hover:bg-teal-600">
+                <i class="fas fa-file-image mr-1"></i>Blob下载
+              </button>
+            </div>
+          </div>
+
           <!-- 事件日志 -->
           <div>
             <h3 class="font-semibold text-gray-700 mb-3 text-sm">
@@ -693,6 +709,51 @@
     function stopAllAnimations() {
       editor.stopAllAnimations();
       log('所有动画已停止');
+    }
+
+    // 获取图片 DataURL
+    async function getImageDataURL() {
+      try {
+        log('正在获取 DataURL...');
+        const dataURL = await editor.getImageData({
+          format: 'png',
+          background: '#ffffff'
+        });
+        console.log('DataURL:', dataURL);
+        log(`✅ DataURL 获取成功！长度: ${dataURL.length} 字符`);
+
+        // 在新窗口预览
+        const win = window.open();
+        win.document.write(`<img src="${dataURL}" style="max-width:100%">`);
+      } catch (err) {
+        log(`❌ 获取失败: ${err.message}`, 'error');
+        console.error(err);
+      }
+    }
+
+    // 获取图片 Blob 并下载
+    async function getImageBlob() {
+      try {
+        log('正在获取 Blob...');
+        const blob = await editor.getImageData({
+          format: 'png',
+          type: 'blob',
+          background: '#ffffff'
+        });
+        console.log('Blob:', blob);
+        log(`✅ Blob 获取成功！大小: ${(blob.size / 1024).toFixed(2)} KB`);
+
+        // 创建下载链接
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `canvas-export-${Date.now()}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        log(`❌ 获取失败: ${err.message}`, 'error');
+        console.error(err);
+      }
     }
 
     // 注册演示形状

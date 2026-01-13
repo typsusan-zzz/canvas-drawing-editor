@@ -943,6 +943,63 @@ editor.registerShapes([
               </div>
             </div>
           </div>
+
+          <!-- 图片导出 API 说明 -->
+          <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-100 mt-12">
+            <h3 class="text-2xl font-bold mb-6 flex items-center text-gray-800">
+              <i class="fas fa-image mr-3 text-green-500"></i>
+              <span data-i18n="docs.imageexport.title">图片导出 API</span>
+            </h3>
+            <p class="text-gray-600 mb-6" data-i18n="docs.imageexport.intro">通过 getImageData() 方法获取画布图片数据（base64 或 Blob），无需触发下载，适合上传到服务器。</p>
+
+            <!-- 基本用法 -->
+            <div class="mb-8">
+              <h4 class="font-bold text-lg text-gray-800 mb-3" data-i18n="docs.imageexport.usage">基本用法</h4>
+              <div class="bg-gray-800 p-4 rounded-lg overflow-x-auto mb-3">
+                <pre class="m-0"><code class="text-sm text-green-400">const editor = document.querySelector('canvas-drawing-editor');
+
+// 获取 base64 格式（默认）
+const dataURL = await editor.getImageData();
+console.log(dataURL); // data:image/png;base64,...
+
+// 获取 Blob 格式（适合上传）
+const blob = await editor.getImageData({
+  type: 'blob',
+  format: 'png',        // 'png' | 'jpeg' | 'webp'
+  quality: 0.92,        // jpeg/webp 质量 (0-1)
+  background: '#ffffff' // 背景色
+});
+
+// 上传到服务器
+const formData = new FormData();
+formData.append('image', blob, 'canvas.png');
+await fetch('/api/upload', { method: 'POST', body: formData });</code></pre>
+              </div>
+            </div>
+
+            <!-- 参数表格 -->
+            <div>
+              <h4 class="font-bold text-lg text-gray-800 mb-3" data-i18n="docs.imageexport.params">参数说明</h4>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                  <thead>
+                    <tr class="bg-gray-50">
+                      <th class="px-4 py-2 font-semibold text-gray-700 border-b">参数</th>
+                      <th class="px-4 py-2 font-semibold text-gray-700 border-b">类型</th>
+                      <th class="px-4 py-2 font-semibold text-gray-700 border-b">默认值</th>
+                      <th class="px-4 py-2 font-semibold text-gray-700 border-b">说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td class="px-4 py-2 border-b font-mono text-indigo-600">format</td><td class="px-4 py-2 border-b">string</td><td class="px-4 py-2 border-b">'png'</td><td class="px-4 py-2 border-b">图片格式：png, jpeg, webp</td></tr>
+                    <tr class="bg-gray-50"><td class="px-4 py-2 border-b font-mono text-indigo-600">quality</td><td class="px-4 py-2 border-b">number</td><td class="px-4 py-2 border-b">0.92</td><td class="px-4 py-2 border-b">图片质量（仅 jpeg/webp）</td></tr>
+                    <tr><td class="px-4 py-2 border-b font-mono text-indigo-600">type</td><td class="px-4 py-2 border-b">string</td><td class="px-4 py-2 border-b">'dataURL'</td><td class="px-4 py-2 border-b">返回类型：dataURL 或 blob</td></tr>
+                    <tr class="bg-gray-50"><td class="px-4 py-2 border-b font-mono text-indigo-600">background</td><td class="px-4 py-2 border-b">string</td><td class="px-4 py-2 border-b">'#ffffff'</td><td class="px-4 py-2 border-b">背景颜色</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
       <!-- [/MODULE] documentation_API文档区域 -->
@@ -1127,6 +1184,10 @@ editor.registerShapes([
           'docs.shapelib.register': '注册形状',
           'docs.shapelib.event': '监听形状添加事件',
           'docs.shapelib.config': '形状配置属性',
+          'docs.imageexport.title': '图片导出 API',
+          'docs.imageexport.intro': '通过 getImageData() 方法获取画布图片数据（base64 或 Blob），无需触发下载，适合上传到服务器。',
+          'docs.imageexport.usage': '基本用法',
+          'docs.imageexport.params': '参数说明',
         },
         en: {
           'nav.features': 'Features',
@@ -1167,6 +1228,10 @@ editor.registerShapes([
           'docs.shapelib.register': 'Register Shapes',
           'docs.shapelib.event': 'Listen for Shape Added Event',
           'docs.shapelib.config': 'Shape Configuration Properties',
+          'docs.imageexport.title': 'Image Export API',
+          'docs.imageexport.intro': 'Use getImageData() method to get canvas image data (base64 or Blob) without triggering download, suitable for server upload.',
+          'docs.imageexport.usage': 'Basic Usage',
+          'docs.imageexport.params': 'Parameters',
           'install.subtitle': 'Quick Start',
           'install.title': '📦 Installation & Integration',
           'install.npm': '<i class="fab fa-npm mr-3 text-red-500"></i> NPM Install',
