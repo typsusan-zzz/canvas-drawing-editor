@@ -31,11 +31,12 @@
 - 💾 **导入导出** - JSON 格式保存/加载项目，PNG 格式导出
 - ⚡ **零依赖** - 纯 JavaScript 实现，无需 React/Vue
 - 🎛️ **可配置** - 通过 tool 配置对象显示/隐藏任意工具
-- 📦 **轻量级** - gzip 后约 33KB
+- 📦 **轻量级** - gzip 后约 20KB
 - 🔄 **旋转控制** - 对象旋转手柄，支持自由旋转
 - ⚖️ **等比缩放** - Shift + 拖拽角点保持宽高比
-- ⭐ **更多形状** - 星形、心形、三角形、菱形、贝塞尔曲线
+- ⭐ **更多形状** - 星形、心形、三角形、菱形、贝塞尔曲线、平滑曲线
 - ✏️ **线条样式** - 实线/虚线/点线样式，单向/双向箭头
+- 🎨 **填充模式** - 支持描边/填充/描边+填充三种模式
 - 🖋️ **富文本** - 支持部分加粗、部分改色、部分斜体
 - 🎬 **Tween 动画** - 对象属性过渡动画（位置、大小、透明度等）
 - 📱 **移动端支持** - 单指拖拽、双指缩放/旋转、长按选择、响应式布局
@@ -518,11 +519,12 @@ A powerful canvas-based drawing editor Web Component with **zero dependencies**.
 - 💾 **Import/Export** - Save and load projects as JSON, export as PNG
 - ⚡ **Zero Dependencies** - Pure JavaScript, no React/Vue required
 - 🎛️ **Configurable** - Show/hide any tool via tool config object
-- 📦 **Lightweight** - ~33KB gzipped
+- 📦 **Lightweight** - ~20KB gzipped
 - 🔄 **Rotation Control** - Object rotation handle for free rotation
 - ⚖️ **Proportional Scaling** - Shift + drag corner to maintain aspect ratio
-- ⭐ **More Shapes** - Star, Heart, Triangle, Diamond, Bezier curves
+- ⭐ **More Shapes** - Star, Heart, Triangle, Diamond, Bezier curves, Smooth curves
 - ✏️ **Line Styles** - Solid/dashed/dotted styles, single/double arrows
+- 🎨 **Fill Modes** - Supports stroke/fill/stroke+fill modes
 - 🖋️ **Rich Text** - Support partial bold, partial color, partial italic
 - 🎬 **Tween Animation** - Object property transition animations (position, size, opacity, etc.)
 - 📱 **Mobile Support** - Single finger drag, two-finger zoom/rotate, long press selection, responsive layout

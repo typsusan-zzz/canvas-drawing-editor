@@ -4,7 +4,7 @@
  */
 
 // 类型定义
-export type ToolType = 'SELECT' | 'PENCIL' | 'RECTANGLE' | 'CIRCLE' | 'TEXT' | 'IMAGE' | 'LINE' | 'ARROW' | 'DOUBLE_ARROW' | 'POLYGON' | 'TRIANGLE' | 'STAR' | 'HEART' | 'DIAMOND' | 'BEZIER' | 'RICH_TEXT';
+export type ToolType = 'SELECT' | 'PENCIL' | 'RECTANGLE' | 'CIRCLE' | 'TEXT' | 'IMAGE' | 'LINE' | 'ARROW' | 'DOUBLE_ARROW' | 'POLYGON' | 'TRIANGLE' | 'STAR' | 'HEART' | 'DIAMOND' | 'BEZIER' | 'SMOOTH_CURVE' | 'RICH_TEXT';
 
 export interface Point {
   x: number;
@@ -31,12 +31,14 @@ export interface RectObject extends BaseObject {
   width: number;
   height: number;
   lineStyle?: LineStyle;  // 线条样式
+  fillMode?: FillMode;    // 填充模式
 }
 
 export interface CircleObject extends BaseObject {
   type: 'CIRCLE';
   radius: number;
   lineStyle?: LineStyle;  // 线条样式
+  fillMode?: FillMode;    // 填充模式
 }
 
 export interface PathObject extends BaseObject {
@@ -212,6 +214,9 @@ export interface ImageObject extends BaseObject {
 // 线条样式类型
 export type LineStyle = 'solid' | 'dashed' | 'dotted';
 
+// 填充模式类型
+export type FillMode = 'stroke' | 'fill' | 'both';
+
 // 箭头类型
 export type ArrowType = 'single' | 'double' | 'none';
 
@@ -239,6 +244,7 @@ export interface PolygonObject extends BaseObject {
   radius: number;   // 外接圆半径
   rotation?: number; // 旋转角度
   lineStyle?: LineStyle;  // 线条样式
+  fillMode?: FillMode;    // 填充模式
 }
 
 // 三角形对象
@@ -246,6 +252,7 @@ export interface TriangleObject extends BaseObject {
   type: 'TRIANGLE';
   radius: number;   // 外接圆半径
   lineStyle?: LineStyle;  // 线条样式
+  fillMode?: FillMode;    // 填充模式
 }
 
 // 星形对象
@@ -255,6 +262,7 @@ export interface StarObject extends BaseObject {
   outerRadius: number; // 外半径
   innerRadius: number; // 内半径
   lineStyle?: LineStyle;  // 线条样式
+  fillMode?: FillMode;    // 填充模式
 }
 
 // 心形对象
@@ -262,6 +270,7 @@ export interface HeartObject extends BaseObject {
   type: 'HEART';
   size: number;  // 心形大小
   lineStyle?: LineStyle;  // 线条样式
+  fillMode?: FillMode;    // 填充模式
 }
 
 // 菱形对象
@@ -270,6 +279,7 @@ export interface DiamondObject extends BaseObject {
   width: number;
   height: number;
   lineStyle?: LineStyle;  // 线条样式
+  fillMode?: FillMode;    // 填充模式
 }
 
 // 贝塞尔曲线控制点
@@ -291,6 +301,14 @@ export interface BezierObject extends BaseObject {
   fill?: string;          // 填充颜色（可选）
 }
 
+// 平滑曲线对象（使用 Catmull-Rom 样条）
+export interface SmoothCurveObject extends BaseObject {
+  type: 'SMOOTH_CURVE';
+  points: Point[];        // 控制点列表
+  tension?: number;       // 张力系数（0-1，默认0.5）
+  closed?: boolean;       // 是否闭合路径（默认false）
+}
+
 // 组合对象
 export interface GroupObject extends BaseObject {
   type: 'GROUP';
@@ -299,7 +317,7 @@ export interface GroupObject extends BaseObject {
   height: number;
 }
 
-export type CanvasObject = RectObject | CircleObject | PathObject | TextObject | RichTextObject | ImageObject | LineObject | ArrowObject | PolygonObject | TriangleObject | StarObject | HeartObject | DiamondObject | BezierObject | GroupObject;
+export type CanvasObject = RectObject | CircleObject | PathObject | TextObject | RichTextObject | ImageObject | LineObject | ArrowObject | PolygonObject | TriangleObject | StarObject | HeartObject | DiamondObject | BezierObject | SmoothCurveObject | GroupObject;
 
 export type LangType = 'zh' | 'en';
 
@@ -319,6 +337,7 @@ export interface ToolConfig {
   heart?: boolean;        // 心形
   diamond?: boolean;      // 菱形
   bezier?: boolean;       // 贝塞尔曲线/钢笔工具
+  smoothCurve?: boolean;  // 平滑曲线工具
   // 操作功能
   undo?: boolean;         // 撤销
   redo?: boolean;         // 重做
@@ -402,10 +421,17 @@ const i18n: Record<LangType, Record<string, string>> = {
     bezier: '钢笔',
     bezierTool: '钢笔工具',
     closePath: '闭合路径',
+    smoothCurve: '平滑曲线',
+    smoothCurveTool: '平滑曲线工具',
+    finishCurve: '完成曲线（双击或Enter）',
     // 线条样式
     lineStyleSolid: '实线',
     lineStyleDashed: '虚线',
     lineStyleDotted: '点线',
+    // 填充模式
+    fillModeStroke: '描边',
+    fillModeFill: '填充',
+    fillModeBoth: '描边+填充',
     // 箭头类型
     arrowTypeSingle: '单向箭头',
     arrowTypeDouble: '双向箭头',
@@ -523,10 +549,17 @@ const i18n: Record<LangType, Record<string, string>> = {
     bezier: 'Pen',
     bezierTool: 'Pen Tool',
     closePath: 'Close Path',
+    smoothCurve: 'Smooth Curve',
+    smoothCurveTool: 'Smooth Curve Tool',
+    finishCurve: 'Finish Curve (Double-click or Enter)',
     // Line styles
     lineStyleSolid: 'Solid',
     lineStyleDashed: 'Dashed',
     lineStyleDotted: 'Dotted',
+    // Fill modes
+    fillModeStroke: 'Stroke',
+    fillModeFill: 'Fill',
+    fillModeBoth: 'Stroke+Fill',
     // Arrow types
     arrowTypeSingle: 'Single Arrow',
     arrowTypeDouble: 'Double Arrow',
@@ -709,6 +742,7 @@ export class CanvasDrawingEditor extends HTMLElement {
   private color: string = '#000000';
   private lineWidth: number = 3;
   private lineStyle: LineStyle = 'solid';
+  private fillMode: FillMode = 'stroke';
   private arrowType: ArrowType = 'single';
 
   // 交互状态
@@ -765,6 +799,11 @@ export class CanvasDrawingEditor extends HTMLElement {
   private isBezierDrawing: boolean = false;           // 是否正在绘制贝塞尔曲线
   private bezierDraggingPoint: number = -1;           // 正在拖拽的点索引
   private bezierDraggingHandle: 'cp1' | 'cp2' | null = null;  // 正在拖拽的控制柄
+
+  // 平滑曲线工具状态
+  private smoothCurvePoints: Point[] = [];            // 当前绘制的平滑曲线点
+  private isSmoothCurveDrawing: boolean = false;      // 是否正在绘制平滑曲线
+  private lastClickTime: number = 0;                  // 上次点击时间（用于检测双击）
   private bezierTempPoint: BezierPoint | null = null; // 临时预览点
 
   // 图层面板状态
@@ -1194,6 +1233,41 @@ export class CanvasDrawingEditor extends HTMLElement {
     });
   }
 
+  // Catmull-Rom 样条曲线辅助函数
+  private drawCatmullRomSpline(ctx: CanvasRenderingContext2D, points: Point[], tension: number = 0.5, closed: boolean = false): void {
+    if (points.length < 2) return;
+
+    // 如果只有两个点，直接画直线
+    if (points.length === 2) {
+      ctx.moveTo(points[0].x, points[0].y);
+      ctx.lineTo(points[1].x, points[1].y);
+      return;
+    }
+
+    const pts = closed ? [...points, points[0], points[1]] : points;
+
+    ctx.moveTo(pts[0].x, pts[0].y);
+
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = i === 0 ? pts[0] : pts[i - 1];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = i + 2 < pts.length ? pts[i + 2] : p2;
+
+      // Catmull-Rom 转换为贝塞尔曲线的控制点
+      const cp1x = p1.x + (p2.x - p0.x) / 6 * tension;
+      const cp1y = p1.y + (p2.y - p0.y) / 6 * tension;
+      const cp2x = p2.x - (p3.x - p1.x) / 6 * tension;
+      const cp2y = p2.y - (p3.y - p1.y) / 6 * tension;
+
+      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+    }
+
+    if (closed) {
+      ctx.closePath();
+    }
+  }
+
   // 获取鼠标在画布上的位置（考虑缩放和平移）
   private getMousePos(e: MouseEvent | TouchEvent): Point {
     const rect = this.canvas.getBoundingClientRect();
@@ -1310,6 +1384,15 @@ export class CanvasDrawingEditor extends HTMLElement {
           maxX = Math.max(maxX, pt.x, pt.cp1x ?? pt.x, pt.cp2x ?? pt.x);
           maxY = Math.max(maxY, pt.y, pt.cp1y ?? pt.y, pt.cp2y ?? pt.y);
         });
+        return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+      }
+      case 'SMOOTH_CURVE': {
+        const curve = obj as SmoothCurveObject;
+        if (curve.points.length === 0) return { x: 0, y: 0, width: 0, height: 0 };
+        const minX = Math.min(...curve.points.map(pt => pt.x));
+        const maxX = Math.max(...curve.points.map(pt => pt.x));
+        const minY = Math.min(...curve.points.map(pt => pt.y));
+        const maxY = Math.max(...curve.points.map(pt => pt.y));
         return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
       }
       case 'GROUP': {
@@ -1533,6 +1616,12 @@ export class CanvasDrawingEditor extends HTMLElement {
       case 'BEZIER': {
         const bezier = obj as BezierObject;
         const bounds = this.getObjectBounds(bezier);
+        // 简单的边界框检测
+        return localX >= bounds.x && localX <= bounds.x + bounds.width && localY >= bounds.y && localY <= bounds.y + bounds.height;
+      }
+      case 'SMOOTH_CURVE': {
+        const curve = obj as SmoothCurveObject;
+        const bounds = this.getObjectBounds(curve);
         // 简单的边界框检测
         return localX >= bounds.x && localX <= bounds.x + bounds.width && localY >= bounds.y && localY <= bounds.y + bounds.height;
       }
@@ -2178,6 +2267,22 @@ export class CanvasDrawingEditor extends HTMLElement {
       return;
     }
 
+    // Enter: 完成平滑曲线绘制
+    if (e.key === 'Enter' && this.isSmoothCurveDrawing) {
+      e.preventDefault();
+      this.finishSmoothCurve();
+      return;
+    }
+
+    // Escape: 取消平滑曲线绘制
+    if (e.key === 'Escape' && this.isSmoothCurveDrawing) {
+      e.preventDefault();
+      this.smoothCurvePoints = [];
+      this.isSmoothCurveDrawing = false;
+      this.renderCanvas();
+      return;
+    }
+
     // Delete/Backspace: 删除
     if ((e.key === 'Delete' || e.key === 'Backspace') && (this.selectedId || this.selectedIds.size > 0)) {
       e.preventDefault();
@@ -2317,6 +2422,15 @@ export class CanvasDrawingEditor extends HTMLElement {
       this.bezierTempPoint = null;
     }
 
+    // 切换工具时，如果正在绘制平滑曲线，完成或清理
+    if (this.tool === 'SMOOTH_CURVE' && tool !== 'SMOOTH_CURVE' && this.smoothCurvePoints.length >= 2) {
+      this.finishSmoothCurve();
+    } else if (this.tool === 'SMOOTH_CURVE' && tool !== 'SMOOTH_CURVE') {
+      // 清理未完成的平滑曲线状态
+      this.smoothCurvePoints = [];
+      this.isSmoothCurveDrawing = false;
+    }
+
     this.tool = tool;
     this.updateToolButtons();
     this.renderCanvas();
@@ -2335,7 +2449,7 @@ export class CanvasDrawingEditor extends HTMLElement {
     });
 
     // 更新形状工具组的图标和选中状态
-    const shapeTools = ['RECTANGLE', 'CIRCLE', 'TRIANGLE', 'STAR', 'HEART', 'DIAMOND', 'BEZIER', 'LINE', 'ARROW', 'DOUBLE_ARROW', 'POLYGON'];
+    const shapeTools = ['RECTANGLE', 'CIRCLE', 'TRIANGLE', 'STAR', 'HEART', 'DIAMOND', 'BEZIER', 'SMOOTH_CURVE', 'LINE', 'ARROW', 'DOUBLE_ARROW', 'POLYGON'];
     const shapesGroup = this.shadow.querySelector('.tool-group[data-group="shapes"]');
     if (shapesGroup) {
       const groupBtn = shapesGroup.querySelector('.tool-group-btn');
@@ -2373,6 +2487,16 @@ export class CanvasDrawingEditor extends HTMLElement {
         }
       }
     }
+
+    // 更新填充模式按钮的选中状态
+    this.shadow.querySelectorAll('.fill-mode-btn').forEach(btn => {
+      const mode = btn.getAttribute('data-fill-mode');
+      if (mode === this.fillMode) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
 
     // 更新线条样式按钮的选中状态
     this.shadow.querySelectorAll('.line-style-btn').forEach(btn => {
@@ -2421,6 +2545,8 @@ export class CanvasDrawingEditor extends HTMLElement {
         return '<polygon points="12 2 22 12 12 22 2 12"/>';
       case 'BEZIER':
         return '<path d="M3 17c3-6 9-6 12 0s9 6 12 0"/><circle cx="3" cy="17" r="2"/><circle cx="21" cy="17" r="2"/>';
+      case 'SMOOTH_CURVE':
+        return '<path d="M3 20c3-6 6-9 9-9s6 3 9 9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="3" cy="20" r="1.5"/><circle cx="12" cy="11" r="1.5"/><circle cx="21" cy="20" r="1.5"/>';
       case 'LINE':
         return '<line x1="5" y1="19" x2="19" y2="5"/>';
       case 'ARROW':
@@ -2677,9 +2803,9 @@ export class CanvasDrawingEditor extends HTMLElement {
       this.saveHistory();
       const id = this.generateId();
       if (this.tool === 'RECTANGLE') {
-        this.currentObject = { id, type: 'RECTANGLE', x, y, width: 0, height: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle } as RectObject;
+        this.currentObject = { id, type: 'RECTANGLE', x, y, width: 0, height: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle, fillMode: this.fillMode } as RectObject;
       } else if (this.tool === 'CIRCLE') {
-        this.currentObject = { id, type: 'CIRCLE', x, y, radius: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle } as CircleObject;
+        this.currentObject = { id, type: 'CIRCLE', x, y, radius: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle, fillMode: this.fillMode } as CircleObject;
       } else if (this.tool === 'PENCIL') {
         this.currentObject = { id, type: 'PATH', x, y, points: [{ x, y }], color: this.color, lineWidth: this.lineWidth };
       } else if (this.tool === 'LINE') {
@@ -2690,23 +2816,76 @@ export class CanvasDrawingEditor extends HTMLElement {
         this.currentObject = { id, type: 'ARROW', x, y, x2: x, y2: y, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle, arrowType: 'double' } as ArrowObject;
       } else if (this.tool === 'POLYGON') {
         // 默认创建六边形
-        this.currentObject = { id, type: 'POLYGON', x, y, radius: 0, sides: 6, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle } as PolygonObject;
+        this.currentObject = { id, type: 'POLYGON', x, y, radius: 0, sides: 6, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle, fillMode: this.fillMode } as PolygonObject;
       } else if (this.tool === 'TRIANGLE') {
-        this.currentObject = { id, type: 'TRIANGLE', x, y, radius: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle } as TriangleObject;
+        this.currentObject = { id, type: 'TRIANGLE', x, y, radius: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle, fillMode: this.fillMode } as TriangleObject;
       } else if (this.tool === 'STAR') {
-        this.currentObject = { id, type: 'STAR', x, y, points: 5, outerRadius: 0, innerRadius: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle } as StarObject;
+        this.currentObject = { id, type: 'STAR', x, y, points: 5, outerRadius: 0, innerRadius: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle, fillMode: this.fillMode } as StarObject;
       } else if (this.tool === 'HEART') {
-        this.currentObject = { id, type: 'HEART', x, y, size: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle } as HeartObject;
+        this.currentObject = { id, type: 'HEART', x, y, size: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle, fillMode: this.fillMode } as HeartObject;
       } else if (this.tool === 'DIAMOND') {
-        this.currentObject = { id, type: 'DIAMOND', x, y, width: 0, height: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle } as DiamondObject;
+        this.currentObject = { id, type: 'DIAMOND', x, y, width: 0, height: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle, fillMode: this.fillMode } as DiamondObject;
       } else if (this.tool === 'BEZIER') {
         // 贝塞尔曲线工具特殊处理
         this.handleBezierClick(x, y);
+        return;
+      } else if (this.tool === 'SMOOTH_CURVE') {
+        // 平滑曲线工具特殊处理
+        this.handleSmoothCurveClick(x, y);
         return;
       }
     }
 
     this.renderCanvas();
+  }
+
+  // 处理平滑曲线点击
+  private handleSmoothCurveClick(x: number, y: number): void {
+    const currentTime = Date.now();
+    const isDoubleClick = currentTime - this.lastClickTime < 300;
+    this.lastClickTime = currentTime;
+
+    // 双击完成曲线
+    if (isDoubleClick && this.smoothCurvePoints.length >= 2) {
+      this.finishSmoothCurve();
+      return;
+    }
+
+    // 添加新点
+    this.smoothCurvePoints.push({ x, y });
+    this.isSmoothCurveDrawing = true;
+    this.renderCanvas();
+  }
+
+  // 完成平滑曲线绘制
+  private finishSmoothCurve(): void {
+    if (this.smoothCurvePoints.length < 2) {
+      this.smoothCurvePoints = [];
+      this.isSmoothCurveDrawing = false;
+      this.renderCanvas();
+      return;
+    }
+
+    const id = `smooth_curve_${Date.now()}`;
+    const curve: SmoothCurveObject = {
+      id,
+      type: 'SMOOTH_CURVE',
+      x: this.smoothCurvePoints[0].x,
+      y: this.smoothCurvePoints[0].y,
+      points: [...this.smoothCurvePoints],
+      tension: 0.5,
+      closed: false,
+      color: this.color,
+      lineWidth: this.lineWidth
+    };
+
+    this.saveHistory();
+    this.objects.push(curve);
+    this.smoothCurvePoints = [];
+    this.isSmoothCurveDrawing = false;
+    this.selectedId = id;
+    this.renderCanvas();
+    this.dispatchChangeEvent();
   }
 
   // 处理贝塞尔曲线点击
@@ -2877,6 +3056,52 @@ export class CanvasDrawingEditor extends HTMLElement {
       ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
       ctx.lineWidth = lineWidth;
     });
+  }
+
+  // 绘制平滑曲线编辑状态
+  private drawSmoothCurveEditState(ctx: CanvasRenderingContext2D): void {
+    if (this.smoothCurvePoints.length === 0) return;
+
+    const handleSize = 6 / this.scale;
+    const lineWidth = 1 / this.scale;
+
+    // 绘制曲线路径
+    ctx.beginPath();
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = this.lineWidth;
+
+    if (this.smoothCurvePoints.length === 1) {
+      // 只有一个点，绘制一个小圆点
+      ctx.arc(this.smoothCurvePoints[0].x, this.smoothCurvePoints[0].y, handleSize, 0, Math.PI * 2);
+      ctx.stroke();
+    } else {
+      // 绘制平滑曲线
+      this.drawCatmullRomSpline(ctx, this.smoothCurvePoints, 0.5, false);
+      ctx.stroke();
+    }
+
+    // 绘制控制点
+    this.smoothCurvePoints.forEach((pt, index) => {
+      ctx.fillStyle = index === 0 ? 'rgba(34, 197, 94, 0.8)' : 'rgba(59, 130, 246, 0.8)';
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, handleSize, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2 / this.scale;
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
+      ctx.lineWidth = lineWidth;
+    });
+
+    // 绘制提示文本
+    if (this.smoothCurvePoints.length >= 2) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.font = `${14 / this.scale}px sans-serif`;
+      const lastPt = this.smoothCurvePoints[this.smoothCurvePoints.length - 1];
+      ctx.fillText(this.t('finishCurve'), lastPt.x + 10 / this.scale, lastPt.y - 10 / this.scale);
+      ctx.restore();
+    }
   }
 
   // 画布鼠标移动
@@ -4254,6 +4479,11 @@ export class CanvasDrawingEditor extends HTMLElement {
       this.drawBezierEditState(this.ctx);
     }
 
+    // 绘制平滑曲线编辑状态
+    if (this.tool === 'SMOOTH_CURVE' && this.smoothCurvePoints.length > 0) {
+      this.drawSmoothCurveEditState(this.ctx);
+    }
+
     // 绘制选中对象的调整手柄
     if (this.selectedId && this.tool === 'SELECT') {
       const selectedObj = this.objects.find(o => o.id === this.selectedId);
@@ -4392,7 +4622,13 @@ export class CanvasDrawingEditor extends HTMLElement {
         const r = obj as RectObject;
         // 应用线条样式
         this.applyLineStyle(ctx, r.lineStyle);
-        ctx.strokeRect(r.x, r.y, r.width, r.height);
+        const fillMode = r.fillMode || 'stroke';
+        if (fillMode === 'fill' || fillMode === 'both') {
+          ctx.fillRect(r.x, r.y, r.width, r.height);
+        }
+        if (fillMode === 'stroke' || fillMode === 'both') {
+          ctx.strokeRect(r.x, r.y, r.width, r.height);
+        }
         ctx.setLineDash([]); // 重置虚线
         break;
       }
@@ -4402,7 +4638,13 @@ export class CanvasDrawingEditor extends HTMLElement {
         this.applyLineStyle(ctx, c.lineStyle);
         ctx.beginPath();
         ctx.arc(c.x, c.y, c.radius, 0, 2 * Math.PI);
-        ctx.stroke();
+        const fillMode = c.fillMode || 'stroke';
+        if (fillMode === 'fill' || fillMode === 'both') {
+          ctx.fill();
+        }
+        if (fillMode === 'stroke' || fillMode === 'both') {
+          ctx.stroke();
+        }
         ctx.setLineDash([]); // 重置虚线
         break;
       }
@@ -4604,7 +4846,13 @@ export class CanvasDrawingEditor extends HTMLElement {
           }
         }
         ctx.closePath();
-        ctx.stroke();
+        const fillMode = pg.fillMode || 'stroke';
+        if (fillMode === 'fill' || fillMode === 'both') {
+          ctx.fill();
+        }
+        if (fillMode === 'stroke' || fillMode === 'both') {
+          ctx.stroke();
+        }
         ctx.setLineDash([]); // 重置虚线
         break;
       }
@@ -4625,7 +4873,13 @@ export class CanvasDrawingEditor extends HTMLElement {
           }
         }
         ctx.closePath();
-        ctx.stroke();
+        const fillMode = tri.fillMode || 'stroke';
+        if (fillMode === 'fill' || fillMode === 'both') {
+          ctx.fill();
+        }
+        if (fillMode === 'stroke' || fillMode === 'both') {
+          ctx.stroke();
+        }
         ctx.setLineDash([]); // 重置虚线
         break;
       }
@@ -4648,7 +4902,13 @@ export class CanvasDrawingEditor extends HTMLElement {
           }
         }
         ctx.closePath();
-        ctx.stroke();
+        const fillMode = star.fillMode || 'stroke';
+        if (fillMode === 'fill' || fillMode === 'both') {
+          ctx.fill();
+        }
+        if (fillMode === 'stroke' || fillMode === 'both') {
+          ctx.stroke();
+        }
         ctx.setLineDash([]); // 重置虚线
         break;
       }
@@ -4674,7 +4934,13 @@ export class CanvasDrawingEditor extends HTMLElement {
           heart.x, heart.y + size * 0.3
         );
         ctx.closePath();
-        ctx.stroke();
+        const fillMode = heart.fillMode || 'stroke';
+        if (fillMode === 'fill' || fillMode === 'both') {
+          ctx.fill();
+        }
+        if (fillMode === 'stroke' || fillMode === 'both') {
+          ctx.stroke();
+        }
         ctx.setLineDash([]); // 重置虚线
         break;
       }
@@ -4689,7 +4955,13 @@ export class CanvasDrawingEditor extends HTMLElement {
         ctx.lineTo(diamond.x, diamond.y + diamond.height / 2); // 下
         ctx.lineTo(diamond.x - diamond.width / 2, diamond.y);  // 左
         ctx.closePath();
-        ctx.stroke();
+        const fillMode = diamond.fillMode || 'stroke';
+        if (fillMode === 'fill' || fillMode === 'both') {
+          ctx.fill();
+        }
+        if (fillMode === 'stroke' || fillMode === 'both') {
+          ctx.stroke();
+        }
         ctx.setLineDash([]); // 重置虚线
         break;
       }
@@ -4730,6 +5002,15 @@ export class CanvasDrawingEditor extends HTMLElement {
           ctx.fillStyle = bezier.fill;
           ctx.fill();
         }
+        ctx.stroke();
+        break;
+      }
+      case 'SMOOTH_CURVE': {
+        const curve = obj as SmoothCurveObject;
+        if (curve.points.length < 2) break;
+
+        ctx.beginPath();
+        this.drawCatmullRomSpline(ctx, curve.points, curve.tension || 0.5, curve.closed || false);
         ctx.stroke();
         break;
       }
@@ -5418,6 +5699,17 @@ export class CanvasDrawingEditor extends HTMLElement {
                     <span class="dropdown-label">${this.t('bezier')}</span>
                   </button>
                 ` : ''}
+                ${tool.smoothCurve !== false ? `
+                  <button class="tool-btn dropdown-item" data-tool="SMOOTH_CURVE" title="${this.t('smoothCurveTool')}">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 20c3-6 6-9 9-9s6 3 9 9"/>
+                      <circle cx="3" cy="20" r="1.5"/>
+                      <circle cx="12" cy="11" r="1.5"/>
+                      <circle cx="21" cy="20" r="1.5"/>
+                    </svg>
+                    <span class="dropdown-label">${this.t('smoothCurve')}</span>
+                  </button>
+                ` : ''}
                 ${tool.line ? `
                   <button class="tool-btn dropdown-item" data-tool="LINE" title="${this.t('line')}">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -5617,6 +5909,24 @@ export class CanvasDrawingEditor extends HTMLElement {
                   <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                     <path d="M3 3v5h5"/>
+                  </svg>
+                </button>
+              </div>
+              <!-- 填充模式选择器 -->
+              <div class="fill-mode-group">
+                <button class="tool-btn fill-mode-btn ${this.fillMode === 'stroke' ? 'active' : ''}" data-fill-mode="stroke" title="${this.t('fillModeStroke')}">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="4" y="4" width="16" height="16" rx="2"/>
+                  </svg>
+                </button>
+                <button class="tool-btn fill-mode-btn ${this.fillMode === 'fill' ? 'active' : ''}" data-fill-mode="fill" title="${this.t('fillModeFill')}">
+                  <svg class="icon" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                    <rect x="4" y="4" width="16" height="16" rx="2"/>
+                  </svg>
+                </button>
+                <button class="tool-btn fill-mode-btn ${this.fillMode === 'both' ? 'active' : ''}" data-fill-mode="both" title="${this.t('fillModeBoth')}">
+                  <svg class="icon" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+                    <rect x="4" y="4" width="16" height="16" rx="2"/>
                   </svg>
                 </button>
               </div>
@@ -5953,6 +6263,43 @@ export class CanvasDrawingEditor extends HTMLElement {
     if (alignLeftBtn) alignLeftBtn.addEventListener('click', () => this.alignLeft());
     if (alignCenterBtn) alignCenterBtn.addEventListener('click', () => this.alignCenterH());
     if (alignRightBtn) alignRightBtn.addEventListener('click', () => this.alignRight());
+
+    // 填充模式选择器
+    this.shadow.querySelectorAll('.fill-mode-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const mode = target.dataset.fillMode as FillMode;
+        this.fillMode = mode;
+        // 更新按钮状态
+        this.shadow.querySelectorAll('.fill-mode-btn').forEach(b => b.classList.remove('active'));
+        target.classList.add('active');
+        // 如果有选中的形状对象，更新其填充模式
+        const selectedObjs = this.getSelectedObjects();
+        if (selectedObjs.length > 0) {
+          this.saveHistory();
+          selectedObjs.forEach(obj => {
+            // 支持所有形状的填充模式（除了 LINE、ARROW、BEZIER、PATH、TEXT、IMAGE）
+            if (obj.type === 'RECTANGLE') {
+              (obj as RectObject).fillMode = mode;
+            } else if (obj.type === 'CIRCLE') {
+              (obj as CircleObject).fillMode = mode;
+            } else if (obj.type === 'POLYGON') {
+              (obj as PolygonObject).fillMode = mode;
+            } else if (obj.type === 'TRIANGLE') {
+              (obj as TriangleObject).fillMode = mode;
+            } else if (obj.type === 'STAR') {
+              (obj as StarObject).fillMode = mode;
+            } else if (obj.type === 'HEART') {
+              (obj as HeartObject).fillMode = mode;
+            } else if (obj.type === 'DIAMOND') {
+              (obj as DiamondObject).fillMode = mode;
+            }
+          });
+          this.renderCanvas();
+          this.dispatchChangeEvent();
+        }
+      });
+    });
 
     // 线条样式选择器
     this.shadow.querySelectorAll('.line-style-btn').forEach(btn => {
@@ -6388,6 +6735,28 @@ export class CanvasDrawingEditor extends HTMLElement {
 
       .spacer {
         flex: 1;
+      }
+
+      /* 填充模式选择器 */
+      .fill-mode-group {
+        display: flex;
+        gap: 2px;
+        padding: 4px;
+        background: #f1f5f9;
+        border-radius: 6px;
+        flex-shrink: 0;
+      }
+
+      .fill-mode-btn {
+        width: 28px;
+        height: 28px;
+        padding: 4px;
+        border-radius: 4px;
+      }
+
+      .fill-mode-btn.active {
+        background: var(--theme-color, ${DEFAULT_THEME_COLOR});
+        color: white;
       }
 
       /* 线条样式选择器 */

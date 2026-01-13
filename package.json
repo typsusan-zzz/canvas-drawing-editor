@@ -1,6 +1,6 @@
 {
   "name": "canvas-drawing-editor",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "A powerful canvas-based drawing editor Web Component - Zero dependencies, works with Vue 2/3, React, Angular, and vanilla HTML",
   "type": "module",
   "main": "dist/canvas-drawing-editor.umd.js",
