@@ -2951,6 +2951,8 @@ export class CanvasDrawingEditor extends HTMLElement {
     } else {
       // 开始绘制图形
       this.saveHistory();
+      // 立即隐藏空画布提示
+      this.hideEmptyHint();
       const id = this.generateId();
       if (this.tool === 'RECTANGLE') {
         this.currentObject = { id, type: 'RECTANGLE', x, y, width: 0, height: 0, color: this.color, lineWidth: this.lineWidth, lineStyle: this.lineStyle, fillMode: this.fillMode } as RectObject;
@@ -3004,6 +3006,8 @@ export class CanvasDrawingEditor extends HTMLElement {
     // 添加新点
     this.smoothCurvePoints.push({ x, y });
     this.isSmoothCurveDrawing = true;
+    // 立即隐藏空画布提示
+    this.hideEmptyHint();
     this.renderCanvas();
   }
 
@@ -3088,6 +3092,8 @@ export class CanvasDrawingEditor extends HTMLElement {
     this.isBezierDrawing = true;
     this.bezierDraggingPoint = this.bezierPoints.length - 1;
     this.bezierDraggingHandle = 'cp2';  // 拖拽出控制柄
+    // 立即隐藏空画布提示
+    this.hideEmptyHint();
 
     this.renderCanvas();
   }
@@ -5732,9 +5738,24 @@ export class CanvasDrawingEditor extends HTMLElement {
     }
 
     // 更新空画布提示显示
+    this.updateEmptyHint();
+  }
+
+  // 更新空画布提示显示状态
+  private updateEmptyHint(): void {
     const emptyHint = this.shadow.querySelector('.empty-hint') as HTMLElement;
     if (emptyHint) {
-      emptyHint.style.display = this.objects.length === 0 ? 'flex' : 'none';
+      // 如果有对象或正在绘制，隐藏提示
+      const shouldHide = this.objects.length > 0 || this.currentObject !== null;
+      emptyHint.style.display = shouldHide ? 'none' : 'flex';
+    }
+  }
+
+  // 立即隐藏空画布提示（用于开始绘制时）
+  private hideEmptyHint(): void {
+    const emptyHint = this.shadow.querySelector('.empty-hint') as HTMLElement;
+    if (emptyHint) {
+      emptyHint.style.display = 'none';
     }
   }
 
@@ -7184,6 +7205,8 @@ export class CanvasDrawingEditor extends HTMLElement {
 
     // 保存当前状态到历史
     this.saveHistory();
+    // 立即隐藏空画布提示
+    this.hideEmptyHint();
 
     let newObject: CanvasObject;
 
