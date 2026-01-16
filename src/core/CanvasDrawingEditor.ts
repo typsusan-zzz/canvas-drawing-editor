@@ -3704,6 +3704,11 @@ export class CanvasDrawingEditor extends HTMLElement {
       this.isSelecting = false;
     }
 
+    // 检测是否有数据变化（拖动、调整大小、旋转、斜切等操作）
+    const hasDataChanged = this.isResizing || this.isRotating || this.isSkewing ||
+                           this.isMultiDragging || this.isMultiRotating ||
+                           (this.isDragging && this.selectedId && this.dragStart);
+
     this.isDragging = false;
     this.dragStart = null;
     this.isResizing = false;
@@ -3729,6 +3734,9 @@ export class CanvasDrawingEditor extends HTMLElement {
     if (this.currentObject) {
       this.objects.push(this.currentObject);
       this.currentObject = null;
+      this.dispatchChangeEvent();
+    } else if (hasDataChanged) {
+      // 拖动、调整大小、旋转等操作完成后触发变化事件
       this.dispatchChangeEvent();
     }
 
