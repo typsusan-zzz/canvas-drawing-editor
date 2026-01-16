@@ -976,10 +976,24 @@ export class CanvasDrawingEditor extends HTMLElement {
 
   // 生命周期：属性变化
   attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
-    if (oldValue === newValue) return;
+    // 对于 initial-data 和 hotzone-data，不跳过相同值的检查
+    // 因为 Vue 等框架的双向绑定可能会重新设置相同的值，但期望触发更新
+    const skipEqualCheck = name === 'initial-data' || name === 'hotzone-data';
+    if (!skipEqualCheck && oldValue === newValue) return;
 
     // 处理 initial-data 属性变化
-    if (name === 'initial-data' && newValue && this.canvas) {
+    if (name === 'initial-data' && this.canvas) {
+      // 如果值为空或 null，清空画布
+      if (!newValue || newValue === 'null' || newValue === '{}') {
+        this.objects = [];
+        this.selectedId = null;
+        this.selectedIds.clear();
+        this.history = [];
+        this.redoHistory = [];
+        this.renderCanvas();
+        this.updateUI();
+        return;
+      }
       this.loadInitialData();
       // 动态更新时需要手动触发渲染（画布已初始化完成）
       this.renderCanvas();
