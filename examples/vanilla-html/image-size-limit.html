@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图片大小限制示例 - Canvas Drawing Editor</title>
+  <script type="module" src="../../dist/canvas-drawing-editor.es.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: white;
+      text-align: center;
+      margin-bottom: 20px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .controls {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    .control-group label {
+      font-weight: 600;
+      color: #333;
+    }
+    .control-group input {
+      padding: 8px 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 14px;
+      width: 120px;
+    }
+    .control-group select {
+      padding: 8px 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .control-group button {
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .control-group button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    .info {
+      background: #f0f4ff;
+      border-left: 4px solid #667eea;
+      padding: 12px 16px;
+      margin-top: 15px;
+      border-radius: 0 6px 6px 0;
+      font-size: 14px;
+      color: #555;
+    }
+    .current-limit {
+      font-weight: bold;
+      color: #667eea;
+    }
+    .editor-wrapper {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    canvas-drawing-editor {
+      display: block;
+      width: 100%;
+      height: 600px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🖼️ 图片大小限制示例</h1>
+    
+    <div class="controls">
+      <div class="control-group">
+        <label>设置图片大小限制:</label>
+        <input type="number" id="sizeInput" value="500" min="0" placeholder="大小">
+        <select id="unitSelect">
+          <option value="kb">KB</option>
+          <option value="mb">MB</option>
+        </select>
+        <button onclick="applyLimit()">应用限制</button>
+        <button onclick="removeLimit()">取消限制</button>
+      </div>
+      <div class="info">
+        <p>当前限制: <span class="current-limit" id="currentLimit">500 KB</span></p>
+        <p style="margin-top: 8px;">💡 尝试上传一张超过限制大小的图片，将会看到错误提示。</p>
+      </div>
+    </div>
+
+    <div class="editor-wrapper">
+      <!-- 使用属性设置初始图片大小限制为 500KB -->
+      <canvas-drawing-editor 
+        id="editor"
+        title="图片大小限制演示"
+        max-image-size="500kb"
+        lang="zh"
+      ></canvas-drawing-editor>
+    </div>
+  </div>
+
+  <script>
+    const editor = document.getElementById('editor');
+    const sizeInput = document.getElementById('sizeInput');
+    const unitSelect = document.getElementById('unitSelect');
+    const currentLimitSpan = document.getElementById('currentLimit');
+
+    function applyLimit() {
+      const size = parseFloat(sizeInput.value);
+      const unit = unitSelect.value;
+      
+      if (isNaN(size) || size <= 0) {
+        alert('请输入有效的大小值');
+        return;
+      }
+      
+      // 使用 API 方法设置限制
+      editor.setMaxImageSize(`${size}${unit}`);
+      updateDisplay();
+    }
+
+    function removeLimit() {
+      editor.setMaxImageSize(0);
+      updateDisplay();
+    }
+
+    function updateDisplay() {
+      const limit = editor.getMaxImageSize();
+      if (limit === 0) {
+        currentLimitSpan.textContent = '无限制';
+      } else if (limit >= 1024) {
+        currentLimitSpan.textContent = `${(limit / 1024).toFixed(2)} MB`;
+      } else {
+        currentLimitSpan.textContent = `${limit} KB`;
+      }
+    }
+
+    // 初始化显示
+    setTimeout(updateDisplay, 100);
+  </script>
+</body>
+</html>
+

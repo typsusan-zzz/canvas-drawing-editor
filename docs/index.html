@@ -693,7 +693,8 @@ export class AppModule { }
                   <tr class="bg-gray-50"><td class="px-4 py-3 border-b font-mono text-orange-600">enable-hotzone</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">false</td><td class="px-4 py-3 border-b" data-i18n="config.attr.hotzone">启用热区功能（管理员模式）</td></tr>
                   <tr><td class="px-4 py-3 border-b font-mono text-orange-600">hotzone-data</td><td class="px-4 py-3 border-b">string</td><td class="px-4 py-3 border-b">-</td><td class="px-4 py-3 border-b" data-i18n="config.attr.hotzoneData">热区变量数据（JSON 格式）</td></tr>
                   <tr class="bg-gray-50"><td class="px-4 py-3 border-b font-mono text-green-600">tool-config</td><td class="px-4 py-3 border-b">string</td><td class="px-4 py-3 border-b">-</td><td class="px-4 py-3 border-b" data-i18n="config.attr.toolConfig">工具配置对象（JSON 格式，推荐使用）</td></tr>
-                  <tr><td class="px-4 py-3 border-b font-mono text-indigo-600">show-line</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.line">显示线条工具</td></tr>
+                  <tr><td class="px-4 py-3 border-b font-mono text-pink-600">max-image-size</td><td class="px-4 py-3 border-b">string</td><td class="px-4 py-3 border-b">-</td><td class="px-4 py-3 border-b" data-i18n="config.attr.maxImageSize">图片大小限制（支持 "500kb"、"2mb" 格式）</td></tr>
+                  <tr class="bg-gray-50"><td class="px-4 py-3 border-b font-mono text-indigo-600">show-line</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.line">显示线条工具</td></tr>
                   <tr class="bg-gray-50"><td class="px-4 py-3 border-b font-mono text-indigo-600">show-arrow</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.arrow">显示箭头工具</td></tr>
                   <tr><td class="px-4 py-3 border-b font-mono text-indigo-600">show-polygon</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.polygon">显示多边形工具</td></tr>
                   <tr class="bg-gray-50"><td class="px-4 py-3 border-b font-mono text-indigo-600">show-undo</td><td class="px-4 py-3 border-b">boolean</td><td class="px-4 py-3 border-b">true</td><td class="px-4 py-3 border-b" data-i18n="config.attr.undo">显示撤销按钮</td></tr>
@@ -1155,6 +1156,7 @@ await fetch('/api/upload', { method: 'POST', body: formData });</code></pre>
           'config.attr.hotzone': '启用热区功能（管理员模式）',
           'config.attr.hotzoneData': '热区变量数据（JSON 格式）',
           'config.attr.toolConfig': '工具配置对象（JSON 格式，推荐使用）',
+          'config.attr.maxImageSize': '图片大小限制（支持 "500kb"、"2mb" 格式）',
           'config.attr.line': '显示线条工具',
           'config.attr.arrow': '显示箭头工具',
           'config.attr.polygon': '显示多边形工具',
@@ -1317,6 +1319,7 @@ await fetch('/api/upload', { method: 'POST', body: formData });</code></pre>
           'config.attr.hotzone': 'Enable hotzone feature (admin mode)',
           'config.attr.hotzoneData': 'Hotzone variable data (JSON format)',
           'config.attr.toolConfig': 'Tool configuration object (JSON format, recommended)',
+          'config.attr.maxImageSize': 'Image size limit (supports "500kb", "2mb" format)',
           'config.attr.line': 'Show line tool',
           'config.attr.arrow': 'Show arrow tool',
           'config.attr.polygon': 'Show polygon tool',

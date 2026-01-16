@@ -430,6 +430,8 @@ export interface EditorConfig {
   lang?: LangType;
   themeColor?: string;
   enableHotzone?: boolean; // 是否启用热区功能，默认false（管理员开启，用户端关闭）
+  // 图片大小限制（单位：KB，0或不设置表示不限制）
+  maxImageSize?: number;
 }
 
 // 国际化文本
@@ -571,6 +573,10 @@ const i18n: Record<LangType, Record<string, string>> = {
     customShapes: '自定义',
     noShapes: '暂无形状',
     addToCanvas: '添加到画布',
+    // 图片大小限制
+    imageSizeExceeded: '图片大小超出限制',
+    imageSizeLimit: '最大允许',
+    currentImageSize: '当前图片大小',
   },
   en: {
     select: 'Select (V)',
@@ -709,6 +715,10 @@ const i18n: Record<LangType, Record<string, string>> = {
     customShapes: 'Custom',
     noShapes: 'No shapes available',
     addToCanvas: 'Add to Canvas',
+    // Image size limit
+    imageSizeExceeded: 'Image size exceeded',
+    imageSizeLimit: 'Maximum allowed',
+    currentImageSize: 'Current image size',
   },
 };
 
@@ -951,7 +961,7 @@ export class CanvasDrawingEditor extends HTMLElement {
   static get observedAttributes(): string[] {
     return [
       'title', 'tool-config', 'initial-data', 'lang', 'theme-color',
-      'enable-hotzone', 'hotzone-data',
+      'enable-hotzone', 'hotzone-data', 'max-image-size',
       // 旧属性（向后兼容）
       'show-pencil', 'show-rectangle', 'show-circle', 'show-text',
       'show-image', 'show-zoom', 'show-download', 'show-export', 'show-import',
@@ -1121,10 +1131,29 @@ export class CanvasDrawingEditor extends HTMLElement {
       lang: lang,
       themeColor: this.getAttribute('theme-color') || defaultConfig.themeColor,
       enableHotzone: this.getAttribute('enable-hotzone') === 'true',
+      maxImageSize: this.parseMaxImageSize(),
     };
 
     // 解析热区数据
     this.parseHotzoneData();
+  }
+
+  // 解析图片大小限制（支持 KB 和 MB 单位）
+  private parseMaxImageSize(): number {
+    const attr = this.getAttribute('max-image-size');
+    if (!attr) return 0;
+
+    const value = attr.trim().toLowerCase();
+    const num = parseFloat(value);
+
+    if (isNaN(num) || num <= 0) return 0;
+
+    // 支持 MB 单位
+    if (value.endsWith('mb')) {
+      return num * 1024; // 转换为 KB
+    }
+    // 默认为 KB
+    return num;
   }
 
   // 获取工具配置（兼容新旧配置方式）
@@ -3786,6 +3815,43 @@ export class CanvasDrawingEditor extends HTMLElement {
 
   // ========== 公开 API 方法 ==========
 
+  /**
+   * 设置图片大小限制
+   * @param size 大小限制，支持数字（KB）或字符串（如 "500kb", "2mb"）
+   * @example
+   * editor.setMaxImageSize(500);      // 500 KB
+   * editor.setMaxImageSize('500kb');  // 500 KB
+   * editor.setMaxImageSize('2mb');    // 2 MB
+   * editor.setMaxImageSize(0);        // 取消限制
+   */
+  public setMaxImageSize(size: number | string): void {
+    if (typeof size === 'number') {
+      this.config.maxImageSize = size;
+    } else {
+      const value = size.trim().toLowerCase();
+      const num = parseFloat(value);
+
+      if (isNaN(num) || num <= 0) {
+        this.config.maxImageSize = 0;
+        return;
+      }
+
+      if (value.endsWith('mb')) {
+        this.config.maxImageSize = num * 1024;
+      } else {
+        this.config.maxImageSize = num;
+      }
+    }
+  }
+
+  /**
+   * 获取当前图片大小限制（单位：KB）
+   * @returns 当前限制值，0 表示无限制
+   */
+  public getMaxImageSize(): number {
+    return this.config.maxImageSize || 0;
+  }
+
   // 导出画布数据为 JSON 对象
   public exportJSON(): { version: string; objects: any[] } {
     return {
@@ -5530,6 +5596,18 @@ export class CanvasDrawingEditor extends HTMLElement {
     if (!input.files || input.files.length === 0) return;
 
     const file = input.files[0];
+
+    // 检查图片大小限制
+    const maxSizeKB = this.config.maxImageSize || 0;
+    if (maxSizeKB > 0) {
+      const fileSizeKB = file.size / 1024;
+      if (fileSizeKB > maxSizeKB) {
+        this.showImageSizeError(fileSizeKB, maxSizeKB);
+        input.value = '';
+        return;
+      }
+    }
+
     const reader = new FileReader();
 
     reader.onload = (event) => {
@@ -5570,6 +5648,165 @@ export class CanvasDrawingEditor extends HTMLElement {
 
     reader.readAsDataURL(file);
     input.value = '';
+  }
+
+  // 显示图片大小超出限制的错误提示
+  private showImageSizeError(currentSizeKB: number, maxSizeKB: number): void {
+    const formatSize = (kb: number): string => {
+      if (kb >= 1024) {
+        return `${(kb / 1024).toFixed(2)} MB`;
+      }
+      return `${kb.toFixed(2)} KB`;
+    };
+
+    const message = `${this.t('imageSizeExceeded')}！\n${this.t('currentImageSize')}: ${formatSize(currentSizeKB)}\n${this.t('imageSizeLimit')}: ${formatSize(maxSizeKB)}`;
+
+    this.showToast(message, 'error');
+  }
+
+  // 显示 Toast 提示
+  private showToast(message: string, type: 'error' | 'success' | 'warning' | 'info' = 'info'): void {
+    // 移除已存在的 toast
+    const existingToast = this.shadow.querySelector('.editor-toast');
+    if (existingToast) {
+      existingToast.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `editor-toast editor-toast-${type}`;
+    toast.innerHTML = `
+      <div class="toast-icon">
+        ${type === 'error' ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>` : ''}
+        ${type === 'success' ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>` : ''}
+        ${type === 'warning' ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>` : ''}
+        ${type === 'info' ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>` : ''}
+      </div>
+      <div class="toast-message">${message.replace(/\n/g, '<br>')}</div>
+      <button class="toast-close">×</button>
+    `;
+
+    // 添加样式
+    const style = document.createElement('style');
+    style.textContent = `
+      .editor-toast {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        z-index: 10000;
+        animation: toastSlideIn 0.3s ease-out;
+        max-width: 400px;
+        min-width: 280px;
+      }
+      .editor-toast-error {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        border: 1px solid #f87171;
+        color: #b91c1c;
+      }
+      .editor-toast-success {
+        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+        border: 1px solid #4ade80;
+        color: #15803d;
+      }
+      .editor-toast-warning {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 1px solid #fbbf24;
+        color: #b45309;
+      }
+      .editor-toast-info {
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        border: 1px solid #60a5fa;
+        color: #1d4ed8;
+      }
+      .toast-icon {
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+      }
+      .toast-icon svg {
+        width: 100%;
+        height: 100%;
+      }
+      .toast-message {
+        flex: 1;
+        font-size: 14px;
+        line-height: 1.5;
+        word-break: break-word;
+      }
+      .toast-close {
+        flex-shrink: 0;
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        opacity: 0.6;
+        padding: 0;
+        line-height: 1;
+        color: inherit;
+      }
+      .toast-close:hover {
+        opacity: 1;
+      }
+      @keyframes toastSlideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+      @keyframes toastSlideOut {
+        from {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateX(-50%) translateY(-20px);
+        }
+      }
+    `;
+    toast.appendChild(style);
+
+    // 关闭按钮事件
+    const closeBtn = toast.querySelector('.toast-close');
+    closeBtn?.addEventListener('click', () => {
+      toast.style.animation = 'toastSlideOut 0.3s ease-out forwards';
+      setTimeout(() => toast.remove(), 300);
+    });
+
+    // 自动关闭
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.style.animation = 'toastSlideOut 0.3s ease-out forwards';
+        setTimeout(() => toast.remove(), 300);
+      }
+    }, 5000);
+
+    this.container.appendChild(toast);
   }
 
   // 保存 JSON

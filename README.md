@@ -165,6 +165,7 @@ export class AppModule { }
 | `enable-hotzone` | boolean | false | 是否启用热区功能（管理员模式） |
 | `hotzone-data` | string | - | 热区变量数据（JSON 格式，用于动态替换文本） |
 | `tool-config` | string | - | 工具配置对象（JSON 格式，见下方） |
+| `max-image-size` | string | - | 图片大小限制（支持 "500kb"、"2mb" 等格式，不设置则无限制） |
 
 #### 工具配置（tool-config）
 
@@ -608,6 +609,51 @@ await fetch('/api/upload', { method: 'POST', body: formData });
 | `type` | string | 'dataURL' | 返回类型：'dataURL' 或 'blob' |
 | `background` | string | '#ffffff' | 背景颜色 |
 
+### 🖼️ 图片大小限制 API
+
+限制用户上传图片的文件大小，超出限制时会显示友好的错误提示。
+
+#### 属性方式配置
+
+```html
+<!-- 限制图片大小为 500KB -->
+<canvas-drawing-editor max-image-size="500kb"></canvas-drawing-editor>
+
+<!-- 限制图片大小为 2MB -->
+<canvas-drawing-editor max-image-size="2mb"></canvas-drawing-editor>
+
+<!-- 不限制（默认） -->
+<canvas-drawing-editor></canvas-drawing-editor>
+```
+
+#### API 方式配置
+
+```javascript
+const editor = document.querySelector('canvas-drawing-editor');
+
+// 设置限制为 500KB
+editor.setMaxImageSize(500);        // 数字默认单位为 KB
+editor.setMaxImageSize('500kb');    // 字符串方式
+
+// 设置限制为 2MB
+editor.setMaxImageSize('2mb');
+
+// 取消限制
+editor.setMaxImageSize(0);
+
+// 获取当前限制（返回 KB，0 表示无限制）
+const limit = editor.getMaxImageSize();
+console.log(limit); // 500
+```
+
+#### 错误提示
+
+当用户上传的图片超出限制时，会显示一个 Toast 提示框：
+
+- 🔴 **图片大小超出限制！**
+- 当前图片大小: 1.25 MB
+- 最大允许: 500 KB
+
 ### 🛠️ 开发
 
 ```bash
@@ -775,6 +821,7 @@ export class AppModule { }
 | `enable-hotzone` | boolean | false | Enable hotzone feature (admin mode) |
 | `hotzone-data` | string | - | Hotzone variable data (JSON format for dynamic text replacement) |
 | `tool-config` | string | - | Tool configuration object (JSON format, see below) |
+| `max-image-size` | string | - | Image size limit (supports "500kb", "2mb" format, no limit if not set) |
 
 #### Tool Configuration (tool-config)
 
@@ -1190,6 +1237,51 @@ await fetch('/api/upload', { method: 'POST', body: formData });
 | `quality` | number | 0.92 | Image quality (jpeg/webp only, 0-1) |
 | `type` | string | 'dataURL' | Return type: 'dataURL' or 'blob' |
 | `background` | string | '#ffffff' | Background color |
+
+### 🖼️ Image Size Limit API
+
+Limit the file size of images uploaded by users. A friendly error message will be displayed when the limit is exceeded.
+
+#### Attribute Configuration
+
+```html
+<!-- Limit image size to 500KB -->
+<canvas-drawing-editor max-image-size="500kb"></canvas-drawing-editor>
+
+<!-- Limit image size to 2MB -->
+<canvas-drawing-editor max-image-size="2mb"></canvas-drawing-editor>
+
+<!-- No limit (default) -->
+<canvas-drawing-editor></canvas-drawing-editor>
+```
+
+#### API Configuration
+
+```javascript
+const editor = document.querySelector('canvas-drawing-editor');
+
+// Set limit to 500KB
+editor.setMaxImageSize(500);        // Number defaults to KB
+editor.setMaxImageSize('500kb');    // String format
+
+// Set limit to 2MB
+editor.setMaxImageSize('2mb');
+
+// Remove limit
+editor.setMaxImageSize(0);
+
+// Get current limit (returns KB, 0 means no limit)
+const limit = editor.getMaxImageSize();
+console.log(limit); // 500
+```
+
+#### Error Message
+
+When a user uploads an image that exceeds the limit, a Toast notification will appear:
+
+- 🔴 **Image size exceeded!**
+- Current image size: 1.25 MB
+- Maximum allowed: 500 KB
 
 ### 🛠️ Development
 
