@@ -4530,6 +4530,7 @@ export class CanvasDrawingEditor extends HTMLElement {
         obj.segments = validSegments;
         this.saveHistory();
         this.renderCanvas();
+        this.dispatchChangeEvent();
       }
     } else {
       // 创建新对象
@@ -4547,6 +4548,7 @@ export class CanvasDrawingEditor extends HTMLElement {
       this.objects.push(richTextObj);
       this.saveHistory();
       this.renderCanvas();
+      this.dispatchChangeEvent();
       const emptyHint2 = this.shadow.querySelector('.empty-hint') as HTMLElement;
       if (emptyHint2) emptyHint2.style.display = 'none';
     }
